@@ -1,0 +1,136 @@
+<resources>
+    <string name="app_name">DroidCalc</string>
+
+    <!-- Screen Titles -->
+    <string name="screen_title_calculator">Calculator</string>
+    <string name="screen_title_history">History</string>
+    <string name="navigate_up">Navigate Up</string>
+
+    <!-- Calculator Screen -->
+
+    <!-- CalculatorScreen Titles & Actions -->
+    <string name="calculator_screen_title">Calculator</string>
+    <string name="action_use_result_for_split_desc">Use the current calculator result in the Split Bill feature</string>
+    <string name="action_use_result_for_sip">Use result for SIP</string>
+    <string name="action_use_result_for_sip_desc">Use the current calculator result in the SIP Calculator feature</string>
+    <string name="action_no_valid_result_for_action">No valid result available</string>
+    <string name="action_no_valid_result_for_action_desc">Indicates that the current result cannot be used for further actions</string>
+
+    <!-- Calculator Keypad Labels -->
+    <!-- Values for the provided KeypadButton snippet -->
+    <string name="keypad_clear">C</string>
+    <string name="keypad_parentheses">( )</string>
+    <string name="keypad_percentage">%</string>
+    <string name="keypad_divide">÷</string>
+
+    <string name="keypad_7">7</string>
+    <string name="keypad_8">8</string>
+    <string name="keypad_9">9</string>
+    <string name="keypad_multiply">×</string>
+
+    <string name="keypad_4">4</string>
+    <string name="keypad_5">5</string>
+    <string name="keypad_6">6</string>
+    <string name="keypad_subtract">−</string>
+
+    <string name="keypad_1">1</string>
+    <string name="keypad_2">2</string>
+    <string name="keypad_3">3</string>
+    <string name="keypad_add">+</string>
+
+    <string name="keypad_0">0</string>
+    <string name="keypad_decimal">.</string>
+    <string name="keypad_delete">DEL</string>
+    <string name="keypad_equals">=</string>
+
+    <!-- History Screen -->
+    <string name="calculation_history_title">Calculation History</string>
+    <string name="sync_history_desc">Sync history with cloud</string>
+    <string name="sync_now_button">Sync Now</string>
+    <string name="no_history_message">No history yet. Perform some calculations!</string>
+    <string name="clear_all_history_desc">Clear all history</string>
+    <string name="clear_all_button">Clear All</string>
+    <string name="delete_item_desc">Delete item</string>
+    <string name="action_use_result_for_split">Use for Split Amount</string>
+    <string name="action_no_actionable_result">No actionable result to use.</string>
+
+    <string name="split_participant_fixed_amount_label">Fixed Amount</string>
+    <string name="split_participant_percentage_label">Percentage</string>
+    <string name="split_participant_weight_label">Weight</string>
+    <string name="split_participant_ratio_label">Ratio</string>
+
+    <!-- SplitScreen -->
+    <string name="split_screen_title">Split Bill</string>
+    <string name="split_add_participant_desc">Add new participant</string>
+    <string name="split_remove_participant_desc">Remove participant</string>
+    <string name="split_initial_total_label">Initial Total: %1$s</string>
+    <string name="split_tip_label">Tip Amount</string>
+    <string name="split_tax_label">Tax Amount</string>
+    <string name="split_participants_header">Participants</string>
+    <string name="split_calculate_button">Calculate Split</string>
+    <string name="split_results_header">Results</string>
+    <string name="split_total_to_split_label">Total to Split: %1$s</string>
+    <string name="split_rounding_info_desc">Information about rounding</string>
+    <string name="split_unknown_participant">Unknown Participant</string>
+    <string name="split_rounding_title">Rounding Information</string>
+    <string name="split_ok_button">OK</string>
+    <string name="split_rounding_details">Individual shares are rounded to the nearest cent. Any minor difference due to rounding is typically distributed to one or more participants to ensure the sum matches the total amount.</string>
+    <string name="split_algorithm_label">Split Algorithm</string>
+    <string name="split_participant_name_label">Participant Name</string>
+    <string name="split_fixed_amount_label">Fixed Amount</string>
+    <string name="split_percentage_label">Percentage (%)</string>
+    <string name="split_weight_label">Weight</string>
+    <string name="split_ratio_label">Ratio</string>
+    <string name="screen_title_split_calculator">Split Calculator</string>
+    <string name="split_total_amount_label">Total Amount</string>
+    <string name="split_tip_percentage_label">Tip %</string>
+    <string name="split_tax_amount_label">Tax Amount</string>
+    <string name="split_algo_equal">Equal</string>
+    <string name="split_algo_fixed_then_equal">Fixed Amount then Equal</string>
+    <string name="split_algo_percentage">Percentage</string>
+    <string name="split_algo_weighted">Weighted</string>
+    <string name="split_algo_ratio">Ratio</string>
+    <string name="split_participants_title">Participants</string>
+    <string name="split_add_participant_button">Add</string>
+    <string name="split_results_title">Results</string>
+
+
+    <!-- SIPCalculator Screen -->
+    <string name="screen_title_sip_calculator">SIP Calculator</string>
+    <string name="sip_initial_investment_label">Initial Investment</string>
+    <string name="sip_annual_rate_label">Annual Rate (%)</string>
+    <string name="sip_periods_months_label">Periods (Months)</string>
+    <string name="sip_monthly_contribution_label">Monthly Contribution</string>
+    <string name="sip_target_future_value_label">Target Future Value</string>
+    <string name="sip_calculation_type_label">Calculation Type</string>
+    <string name="sip_calculate_button">Calculate SIP</string>
+    <string name="sip_result_title">Calculation Result</string>
+    <string name="sip_type_future_value_ordinary_annuity">Future Value (Ordinary Annuity)</string>
+    <string name="sip_type_future_value_annuity_due">Future Value (Annuity Due)</string>
+    <string name="sip_type_required_monthly_contribution">Required Monthly Contribution</string>
+    <!-- Content Descriptions -->
+    <string name="sip_reset_inputs_desc">Reset all input fields</string>
+    <string name="sip_switch_thumb_annuity_due_desc">Annuity Due selected (contributions at the start of the period)</string>
+    <string name="sip_switch_thumb_ordinary_desc">Ordinary Annuity selected (contributions at the end of the period)</string><!-- Input Field Labels -->
+    <string name="sip_target_value_optional_label">Target Goal (Optional)</string>
+    <string name="sip_duration_in_years">Duration (Years)</string>
+    <string name="sip_duration_in_months">Duration (Months)</string>
+    <string name="sip_contribution_timing_label">Contribution Timing</string>
+    <!-- Button Texts -->
+    <string name="sip_duration_years">Years</string>
+    <string name="sip_duration_months">Months</string>
+    <!-- Informational Texts -->
+    <string name="sip_timing_start_period">Contributions at the START of each period.</string>
+    <string name="sip_timing_end_period">Contributions at the END of each period.</string>
+    <!-- Results Section Headers and Labels -->
+    <string name="sip_results_header">SIP Insights ✨</string>
+    <string name="sip_result_fv_ordinary">Future Value (End of Period)</string>
+    <string name="sip_result_fv_due">Future Value (Start of Period)</string>
+    <string name="sip_result_req_monthly">Required Monthly Contribution</string>
+    <string name="sip_wealth_breakdown_header">Wealth Breakdown</string>
+    <string name="sip_result_total_investment">Total Investment</string>
+    <string name="sip_result_total_interest_due">Total Interest (Start of Period)</string>
+    <string name="sip_result_total_interest_ordinary">Total Interest (End of Period)</string>
+    <!-- Currency Symbol -->
+    <string name="currency_symbol">₹</string>
+</resources>
