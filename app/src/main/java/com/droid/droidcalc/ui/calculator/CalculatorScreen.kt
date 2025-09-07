@@ -57,7 +57,6 @@ import com.droid.droidcalc.ui.theme.CalcTheme
  * @author DroidSwap
  */
 private object CalculatorScreenDimens {
-    val ScreenPadding = 8.dp
     val DisplayBottomPadding = 16.dp
     const val KeypadColumns = 4
     val KeypadContentPadding = 4.dp
@@ -135,9 +134,8 @@ fun CalculatorScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    ) { _ ->
         CalculatorScreenContent(
-            modifier = Modifier.padding(paddingValues),
             uiState = uiState,
             onIntent = viewModel::processIntent
         )
@@ -176,9 +174,7 @@ private fun CalculatorScreenContent(
     val keypadButtons = rememberKeypadButtons()
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(CalculatorScreenDimens.ScreenPadding)
+        modifier = modifier.fillMaxSize().padding(bottom = 16.dp).padding(horizontal = 8.dp)
     ) {
         AnimatedDisplay(
             expression = uiState.expression,

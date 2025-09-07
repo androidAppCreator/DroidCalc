@@ -18,8 +18,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check // For Switch thumb
 import androidx.compose.material.icons.filled.Close // For Switch thumb
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +56,6 @@ private object SIPScreenDimens {
     val ButtonHeight: Dp = 48.dp
     val ProgressIndicatorSize: Dp = 24.dp
     val RowItemSpacing: Dp = 8.dp
-    val TopBarIconSize: Dp = 24.dp // Example if needed
     val ResultRowVerticalPadding: Dp = 4.dp
     val ResultSectionTopPadding: Dp = 16.dp
     val ResultTitleBottomPadding: Dp = 8.dp
@@ -98,9 +97,8 @@ fun SIPScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { paddingValues ->
+    ) { _ ->
         SIPScreenContent(
-            modifier = Modifier.padding(paddingValues),
             uiState = uiState,
             onIntent = {
                 viewModel.processIntent(it)
@@ -137,7 +135,8 @@ fun SIPScreenContent(
         Card(
             elevation = CardDefaults.cardElevation(defaultElevation = SIPScreenDimens.RowItemSpacing), // 8.dp
             shape = MaterialTheme.shapes.extraLarge, 
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onPrimary)
         ) {
             Column(modifier = Modifier.padding(SIPScreenDimens.CardPadding), verticalArrangement = Arrangement.spacedBy(SIPScreenDimens.FormElementSpacing)) {
                 SIPInputField(
@@ -365,8 +364,12 @@ fun SIPResultDisplay(result: SIPResult, isAnnuityDue: Boolean) {
             result.requiredMonthlyContribution?.let {
                 ResultRow(label = stringResource(R.string.sip_result_req_monthly), value = it.toPlainString())
             }
-            Divider(modifier = Modifier.padding(vertical = SIPScreenDimens.RowItemSpacing))
-            
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = SIPScreenDimens.RowItemSpacing),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
+
             Text(stringResource(R.string.sip_wealth_breakdown_header), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = SIPScreenDimens.ResultRowVerticalPadding))
             ResultRow(label = stringResource(R.string.sip_result_total_investment), value = result.totalInvestment.toPlainString())
             ResultRow(label = stringResource(if (isAnnuityDue) R.string.sip_result_total_interest_due else R.string.sip_result_total_interest_ordinary), value = (if (isAnnuityDue) result.totalInterestEarnedDue else result.totalInterestEarnedOrdinary).toPlainString(), isWealthGain = true)
