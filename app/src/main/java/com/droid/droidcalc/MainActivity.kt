@@ -1,11 +1,3 @@
-/**
- * This file defines the main entry point of the DroidCalc application, [MainActivity].
- * It sets up the core UI structure using Jetpack Compose and Material 3, including
- * the overall theme, window size class handling, and the primary application scaffold
- * which hosts the navigation graph.
- *
- * @author DroidSwap
- */
 package com.droid.droidcalc
 
 import android.os.Bundle
@@ -20,7 +12,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -37,6 +28,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
@@ -132,7 +125,7 @@ fun AppContent(
             TopAppBar(
                 title = { Text(stringResource(id = currentScreenForTitle.titleResId)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = Color.White
                 ),
                 navigationIcon = {
                     if (showUpButton) {
@@ -148,7 +141,7 @@ fun AppContent(
                     if (currentDestination?.route != Screen.History.route) {
                         IconButton(onClick = { navController.navigate(Screen.History.route) }) {
                             Icon(
-                                imageVector = Screen.History.icon,
+                                painter  = painterResource(Screen.History.icon),
                                 contentDescription = stringResource(id = Screen.History.titleResId)
                             )
                         }
@@ -160,7 +153,7 @@ fun AppContent(
             NavigationBar {
                 bottomNavScreens.forEach { screen ->
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = stringResource(id = screen.titleResId)) },
+                        icon = { Icon(painterResource( screen.icon), contentDescription = stringResource(id = screen.titleResId)) },
                         label = { Text(stringResource(id = screen.titleResId)) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {

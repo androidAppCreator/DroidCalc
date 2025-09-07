@@ -81,7 +81,7 @@
     <string name="split_percentage_label">Percentage (%)</string>
     <string name="split_weight_label">Weight</string>
     <string name="split_ratio_label">Ratio</string>
-    <string name="screen_title_split_calculator">Split Calculator</string>
+    <string name="screen_title_split_calculator">Split</string>
     <string name="split_total_amount_label">Total Amount</string>
     <string name="split_tip_percentage_label">Tip %</string>
     <string name="split_tax_amount_label">Tax Amount</string>
@@ -96,7 +96,7 @@
 
 
     <!-- SIPCalculator Screen -->
-    <string name="screen_title_sip_calculator">SIP Calculator</string>
+    <string name="screen_title_sip_calculator">SIP</string>
     <string name="sip_initial_investment_label">Initial Investment</string>
     <string name="sip_annual_rate_label">Annual Rate (%)</string>
     <string name="sip_periods_months_label">Periods (Months)</string>

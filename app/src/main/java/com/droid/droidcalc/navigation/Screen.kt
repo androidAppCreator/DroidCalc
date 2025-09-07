@@ -1,10 +1,5 @@
 package com.droid.droidcalc.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.droid.droidcalc.R // Assuming R class is in this package or imported correctly
 
@@ -21,7 +16,7 @@ import com.droid.droidcalc.R // Assuming R class is in this package or imported 
 sealed class Screen(
     val route: String,
     val titleResId: Int, 
-    val icon: ImageVector
+    val icon: Int
 ) {
     /**
      * Represents the Calculator screen.
@@ -30,7 +25,7 @@ sealed class Screen(
     data object Calculator : Screen(
         route = "calculator", 
         titleResId = R.string.screen_title_calculator,
-        icon = Icons.Filled.Add
+        icon = R.drawable.ic_calculator
     )
 
     /**
@@ -40,7 +35,7 @@ sealed class Screen(
     data object History : Screen(
         route = "history", 
         titleResId = R.string.screen_title_history,
-        icon = Icons.Filled.Settings
+        icon = R.drawable.ic_history
     )
 
     /**
@@ -50,7 +45,7 @@ sealed class Screen(
     data object SplitCalculator : Screen(
         route = "split_calculator_landing", // Base route for the tab
         titleResId = R.string.screen_title_split_calculator, // Needs to be defined in strings.xml
-        icon = Icons.Filled.Close
+        icon = R.drawable.ic_split
     )
 
     /**
@@ -60,7 +55,7 @@ sealed class Screen(
     data object SIPCalculator : Screen(
         route = "sip_calculator_landing", // Base route for the tab
         titleResId = R.string.screen_title_sip_calculator, // Needs to be defined in strings.xml
-        icon = Icons.Filled.KeyboardArrowUp
+        icon = R.drawable.ic_sip
     )
 
     // Parameterized routes like "split/{total}" and "sip/{initialAmount}" 
