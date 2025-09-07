@@ -51,10 +51,6 @@ private object AnimationConstants {
     const val POP_ANIMATION_EXTRA_DELAY_MS = 50L
     const val SCALE_POP_TARGET = 1.1f
     const val SCALE_NORMAL_TARGET = 1.0f
-    const val SHIMMER_ALPHA_MEDIUM = 0.5f
-    const val SHIMMER_ALPHA_LOW = 0.2f
-    const val SHIMMER_TRANSLATE_ANIM_TARGET = 1000f
-    const val SHIMMER_DURATION_MS = 1500
 }
 
 /**
