@@ -1,20 +1,44 @@
 package com.droid.droidcalc.ui.calculator.components
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-// import androidx.compose.material.ripple.rememberRipple // DEPRECATED: Removed
-import androidx.compose.material3.ripple // Correct M3 ripple factory function
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -108,34 +132,14 @@ fun AnimatedDisplay(
         label = "resultScalePop"
     )
 
-    val shimmerColors = listOf(
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = AnimationConstants.SHIMMER_ALPHA_MEDIUM),
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = AnimationConstants.SHIMMER_ALPHA_LOW),
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = AnimationConstants.SHIMMER_ALPHA_MEDIUM)
-    )
-
-    val transition = rememberInfiniteTransition(label = "shimmerTransition")
-    val translateAnim by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = AnimationConstants.SHIMMER_TRANSLATE_ANIM_TARGET,
-        animationSpec = infiniteRepeatable(
-            tween(durationMillis = AnimationConstants.SHIMMER_DURATION_MS, easing = FastOutSlowInEasing),
-            RepeatMode.Restart
-        ),
-        label = "shimmerTranslate"
-    )
-
-    val shimmerBrush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = androidx.compose.ui.geometry.Offset.Zero,
-        end = androidx.compose.ui.geometry.Offset(x = translateAnim, y = translateAnim)
-    )
-
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clipToBounds()
-            .padding(horizontal = DisplayDimens.ScreenPaddingHorizontal, vertical = DisplayDimens.ScreenPaddingVertical),
+            .padding(
+                horizontal = DisplayDimens.ScreenPaddingHorizontal,
+                vertical = DisplayDimens.ScreenPaddingVertical
+            ),
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.Bottom
     ) {
@@ -156,11 +160,11 @@ fun AnimatedDisplay(
             targetState = result,
             transitionSpec = {
                 if (isResultAnimation || targetState.length > initialState.length || (targetState != "0" && initialState == "0")) {
-                    slideInVertically { height -> height } + fadeIn() with
-                            slideOutVertically { height -> -height } + fadeOut()
+                    (slideInVertically { height -> height } + fadeIn()).togetherWith(
+                        slideOutVertically { height -> -height } + fadeOut())
                 } else {
-                    slideInVertically { height -> -height } + fadeIn() with
-                            slideOutVertically { height -> height } + fadeOut()
+                    (slideInVertically { height -> -height } + fadeIn()).togetherWith(
+                        slideOutVertically { height -> height } + fadeOut())
                 }.using(SizeTransform(clip = false))
             },
             label = "animatedDisplayContent"
@@ -181,7 +185,6 @@ fun AnimatedDisplay(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .background(shimmerBrush)
                     )
                 }
                 Text(
@@ -211,7 +214,7 @@ fun AnimatedDisplay(
 @Composable
 fun AnimatedDisplayPreviewFinalResult() {
     CalcTheme {
-        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)){
+        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
                 expression = "123+456",
                 result = "579",
@@ -228,7 +231,7 @@ fun AnimatedDisplayPreviewFinalResult() {
 @Composable
 fun AnimatedDisplayErrorPreview() {
     CalcTheme {
-         Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)){
+        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
                 expression = "1/0",
                 result = "Error",
@@ -245,7 +248,7 @@ fun AnimatedDisplayErrorPreview() {
 @Composable
 fun AnimatedDisplayInputPreview() {
     CalcTheme {
-         Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)){
+        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
                 expression = "123+45*",
                 result = "123+45*",
@@ -262,7 +265,7 @@ fun AnimatedDisplayInputPreview() {
 @Composable
 fun AnimatedDisplayLiveEvaluationPreview() {
     CalcTheme {
-        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)){
+        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
                 expression = "24+2",
                 result = "26",
