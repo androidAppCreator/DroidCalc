@@ -9,22 +9,41 @@
 package com.droid.droidcalc.ui.calculator
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Info // Placeholder for generic info
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.droid.droidcalc.R // Ensure R is correctly imported or generated
+import com.droid.droidcalc.R
 import com.droid.droidcalc.navigation.NavigationEvent
 import com.droid.droidcalc.ui.calculator.components.AnimatedDisplay
 import com.droid.droidcalc.ui.calculator.components.CalcKeyButton
@@ -44,7 +63,6 @@ private object CalculatorScreenDimens {
     val KeypadContentPadding = 4.dp
     val KeypadArrangementSpacing = 8.dp
     val BottomSheetBottomPadding = 32.dp
-    const val KeypadWideButtonSpanRatio = 2.1f // Not currently used, but kept from original
     const val KeypadNormalButtonRatio = 1f
 }
 
@@ -94,8 +112,9 @@ fun CalculatorScreen(
                         event.popUpToRoute?.let { popUpTo(it) { inclusive = event.inclusive } }
                         launchSingleTop = event.isLaunchSingleTop
                     }
-                    viewModel.processIntent(CalculatorContract.Intent.NavigationEffectConsumed) 
+                    viewModel.processIntent(CalculatorContract.Intent.NavigationEffectConsumed)
                 }
+
                 is NavigationEvent.NavigateBack -> navController.popBackStack()
             }
         }
@@ -116,7 +135,7 @@ fun CalculatorScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues -> 
+    ) { paddingValues ->
         CalculatorScreenContent(
             modifier = Modifier.padding(paddingValues),
             uiState = uiState,
@@ -126,9 +145,13 @@ fun CalculatorScreen(
         if (uiState.showResultActionBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { viewModel.processIntent(CalculatorContract.Intent.DismissResultActions) },
-                sheetState = sheetState
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.background
             ) {
-                ResultActionBottomSheetContent(uiState = uiState, onIntent = viewModel::processIntent)
+                ResultActionBottomSheetContent(
+                    uiState = uiState,
+                    onIntent = viewModel::processIntent
+                )
             }
         }
     }
@@ -150,7 +173,7 @@ private fun CalculatorScreenContent(
     uiState: CalculatorContract.State,
     onIntent: (CalculatorContract.Intent) -> Unit
 ) {
-    val keypadButtons = rememberKeypadButtons() 
+    val keypadButtons = rememberKeypadButtons()
 
     Column(
         modifier = modifier
@@ -193,17 +216,27 @@ private fun ResultActionBottomSheetContent(
     Column(modifier = Modifier.padding(bottom = CalculatorScreenDimens.BottomSheetBottomPadding)) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.action_use_result_for_split)) },
-            leadingContent = { Icon(Icons.Filled.Build, contentDescription = stringResource(R.string.action_use_result_for_split)) },
+            leadingContent = {
+                Icon(
+                    Icons.Filled.Build,
+                    contentDescription = stringResource(R.string.action_use_result_for_split)
+                )
+            },
             modifier = Modifier.clickable { onIntent(CalculatorContract.Intent.ActionNavigateToSplit) }
         )
         ListItem(
             headlineContent = { Text(stringResource(R.string.action_use_result_for_sip)) },
-            leadingContent = { Icon(Icons.Filled.Info, contentDescription = stringResource(R.string.action_use_result_for_sip)) },
+            leadingContent = {
+                Icon(
+                    Icons.Filled.Info,
+                    contentDescription = stringResource(R.string.action_use_result_for_sip)
+                )
+            },
             modifier = Modifier.clickable { onIntent(CalculatorContract.Intent.ActionNavigateToSIP) }
         )
         if (uiState.actionableNumericResult == null && uiState.showResultActionBottomSheet) {
-             ListItem(
-                headlineContent = { Text(stringResource(R.string.action_no_valid_result_for_action)) }, 
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.action_no_valid_result_for_action)) },
                 leadingContent = { Icon(Icons.Filled.Info, contentDescription = null) }
             )
         }
@@ -222,30 +255,110 @@ private fun rememberKeypadButtons(): List<KeypadButton> {
     // Assuming R.string.keypad_0, R.string.keypad_1 ... R.string.keypad_9 are defined
     // For example: <string name="keypad_7">7</string>
     return listOf(
-        KeypadButton(stringResource(R.string.keypad_clear), CalculatorContract.Intent.Clear, KeyType.ACTION_PRIMARY),
-        KeypadButton(stringResource(R.string.keypad_parentheses), CalculatorContract.Intent.ParenthesesInput, KeyType.ACTION_SECONDARY),
-        KeypadButton(stringResource(R.string.keypad_percentage), CalculatorContract.Intent.PercentageInput, KeyType.ACTION_SECONDARY),
-        KeypadButton(stringResource(R.string.keypad_divide), CalculatorContract.Intent.OperatorInput('/'), KeyType.OPERATOR),
+        KeypadButton(
+            stringResource(R.string.keypad_clear),
+            CalculatorContract.Intent.Clear,
+            KeyType.ACTION_PRIMARY
+        ),
+        KeypadButton(
+            stringResource(R.string.keypad_parentheses),
+            CalculatorContract.Intent.ParenthesesInput,
+            KeyType.ACTION_SECONDARY
+        ),
+        KeypadButton(
+            stringResource(R.string.keypad_percentage),
+            CalculatorContract.Intent.PercentageInput,
+            KeyType.ACTION_SECONDARY
+        ),
+        KeypadButton(
+            stringResource(R.string.keypad_divide),
+            CalculatorContract.Intent.OperatorInput('/'),
+            KeyType.OPERATOR
+        ),
 
-        KeypadButton(stringResource(R.string.keypad_7), CalculatorContract.Intent.NumberInput('7'), KeyType.NUMBER), // Assuming R.string.keypad_7 = "7"
-        KeypadButton(stringResource(R.string.keypad_8), CalculatorContract.Intent.NumberInput('8'), KeyType.NUMBER), // Assuming R.string.keypad_8 = "8"
-        KeypadButton(stringResource(R.string.keypad_9), CalculatorContract.Intent.NumberInput('9'), KeyType.NUMBER), // Assuming R.string.keypad_9 = "9"
-        KeypadButton(stringResource(R.string.keypad_multiply), CalculatorContract.Intent.OperatorInput('*'), KeyType.OPERATOR),
+        KeypadButton(
+            stringResource(R.string.keypad_7),
+            CalculatorContract.Intent.NumberInput('7'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_7 = "7"
+        KeypadButton(
+            stringResource(R.string.keypad_8),
+            CalculatorContract.Intent.NumberInput('8'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_8 = "8"
+        KeypadButton(
+            stringResource(R.string.keypad_9),
+            CalculatorContract.Intent.NumberInput('9'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_9 = "9"
+        KeypadButton(
+            stringResource(R.string.keypad_multiply),
+            CalculatorContract.Intent.OperatorInput('*'),
+            KeyType.OPERATOR
+        ),
 
-        KeypadButton(stringResource(R.string.keypad_4), CalculatorContract.Intent.NumberInput('4'), KeyType.NUMBER), // Assuming R.string.keypad_4 = "4"
-        KeypadButton(stringResource(R.string.keypad_5), CalculatorContract.Intent.NumberInput('5'), KeyType.NUMBER), // Assuming R.string.keypad_5 = "5"
-        KeypadButton(stringResource(R.string.keypad_6), CalculatorContract.Intent.NumberInput('6'), KeyType.NUMBER), // Assuming R.string.keypad_6 = "6"
-        KeypadButton(stringResource(R.string.keypad_subtract), CalculatorContract.Intent.OperatorInput('-'), KeyType.OPERATOR),
+        KeypadButton(
+            stringResource(R.string.keypad_4),
+            CalculatorContract.Intent.NumberInput('4'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_4 = "4"
+        KeypadButton(
+            stringResource(R.string.keypad_5),
+            CalculatorContract.Intent.NumberInput('5'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_5 = "5"
+        KeypadButton(
+            stringResource(R.string.keypad_6),
+            CalculatorContract.Intent.NumberInput('6'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_6 = "6"
+        KeypadButton(
+            stringResource(R.string.keypad_subtract),
+            CalculatorContract.Intent.OperatorInput('-'),
+            KeyType.OPERATOR
+        ),
 
-        KeypadButton(stringResource(R.string.keypad_1), CalculatorContract.Intent.NumberInput('1'), KeyType.NUMBER), // Assuming R.string.keypad_1 = "1"
-        KeypadButton(stringResource(R.string.keypad_2), CalculatorContract.Intent.NumberInput('2'), KeyType.NUMBER), // Assuming R.string.keypad_2 = "2"
-        KeypadButton(stringResource(R.string.keypad_3), CalculatorContract.Intent.NumberInput('3'), KeyType.NUMBER), // Assuming R.string.keypad_3 = "3"
-        KeypadButton(stringResource(R.string.keypad_add), CalculatorContract.Intent.OperatorInput('+'), KeyType.OPERATOR),
+        KeypadButton(
+            stringResource(R.string.keypad_1),
+            CalculatorContract.Intent.NumberInput('1'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_1 = "1"
+        KeypadButton(
+            stringResource(R.string.keypad_2),
+            CalculatorContract.Intent.NumberInput('2'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_2 = "2"
+        KeypadButton(
+            stringResource(R.string.keypad_3),
+            CalculatorContract.Intent.NumberInput('3'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_3 = "3"
+        KeypadButton(
+            stringResource(R.string.keypad_add),
+            CalculatorContract.Intent.OperatorInput('+'),
+            KeyType.OPERATOR
+        ),
 
-        KeypadButton(stringResource(R.string.keypad_0), CalculatorContract.Intent.NumberInput('0'), KeyType.NUMBER), // Assuming R.string.keypad_0 = "0"
-        KeypadButton(stringResource(R.string.keypad_decimal), CalculatorContract.Intent.DecimalInput, KeyType.NUMBER),
-        KeypadButton(stringResource(R.string.keypad_delete), CalculatorContract.Intent.Delete, KeyType.ACTION_SECONDARY),
-        KeypadButton(stringResource(R.string.keypad_equals), CalculatorContract.Intent.Calculate, KeyType.ACTION_TERTIARY)
+        KeypadButton(
+            stringResource(R.string.keypad_0),
+            CalculatorContract.Intent.NumberInput('0'),
+            KeyType.NUMBER
+        ), // Assuming R.string.keypad_0 = "0"
+        KeypadButton(
+            stringResource(R.string.keypad_decimal),
+            CalculatorContract.Intent.DecimalInput,
+            KeyType.NUMBER
+        ),
+        KeypadButton(
+            stringResource(R.string.keypad_delete),
+            CalculatorContract.Intent.Delete,
+            KeyType.ACTION_SECONDARY
+        ),
+        KeypadButton(
+            stringResource(R.string.keypad_equals),
+            CalculatorContract.Intent.Calculate,
+            KeyType.ACTION_TERTIARY
+        )
     )
 }
 
@@ -276,7 +389,7 @@ private fun KeypadView(
                 onClick = { onIntent(button.intent) },
                 keyType = button.keyType,
                 modifier = Modifier
-                    .aspectRatio(CalculatorScreenDimens.KeypadNormalButtonRatio) 
+                    .aspectRatio(CalculatorScreenDimens.KeypadNormalButtonRatio)
                     .fillMaxWidth()
             )
         }
@@ -303,7 +416,10 @@ fun CalculatorScreenContentPreview() {
 fun ResultActionBottomSheetPreview() {
     CalcTheme {
         ResultActionBottomSheetContent(
-            uiState = CalculatorContract.State(actionableNumericResult = "579", showResultActionBottomSheet = true),
+            uiState = CalculatorContract.State(
+                actionableNumericResult = "579",
+                showResultActionBottomSheet = true
+            ),
             onIntent = {}
         )
     }

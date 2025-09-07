@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -28,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -113,7 +113,11 @@ fun AppContent(
     val currentDestination = navBackStackEntry?.destination
 
     val currentScreenForTitle = allScreens.find { navScreen ->
-        currentDestination?.hierarchy?.any { it.route == navScreen.route || currentDestination.route?.startsWith(navScreen.route.substringBefore("/")) == true } == true
+        currentDestination?.hierarchy?.any {
+            it.route == navScreen.route || currentDestination.route?.startsWith(
+                navScreen.route.substringBefore("/")
+            ) == true
+        } == true
     } ?: Screen.Calculator // Default title to Calculator if no match is found
 
     val canNavigateBack = navController.previousBackStackEntry != null
@@ -125,7 +129,7 @@ fun AppContent(
             TopAppBar(
                 title = { Text(stringResource(id = currentScreenForTitle.titleResId)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.background,
                 ),
                 navigationIcon = {
                     if (showUpButton) {
@@ -141,7 +145,7 @@ fun AppContent(
                     if (currentDestination?.route != Screen.History.route) {
                         IconButton(onClick = { navController.navigate(Screen.History.route) }) {
                             Icon(
-                                painter  = painterResource(Screen.History.icon),
+                                painter = painterResource(Screen.History.icon),
                                 contentDescription = stringResource(id = Screen.History.titleResId)
                             )
                         }
@@ -153,7 +157,12 @@ fun AppContent(
             NavigationBar {
                 bottomNavScreens.forEach { screen ->
                     NavigationBarItem(
-                        icon = { Icon(painterResource( screen.icon), contentDescription = stringResource(id = screen.titleResId)) },
+                        icon = {
+                            Icon(
+                                painterResource(screen.icon),
+                                contentDescription = stringResource(id = screen.titleResId)
+                            )
+                        },
                         label = { Text(stringResource(id = screen.titleResId)) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
@@ -181,7 +190,12 @@ fun AppContent(
  * @author DroidSwap
  */
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, name = "Phone Scaffold with NavGraph Placeholders", widthDp = 360, heightDp = 720)
+@Preview(
+    showBackground = true,
+    name = "Phone Scaffold with NavGraph Placeholders",
+    widthDp = 360,
+    heightDp = 720
+)
 @Composable
 fun AppContentPreviewPhone() {
     CalcTheme {
@@ -201,22 +215,34 @@ fun AppContentPreviewPhone() {
                     modifier = modifier,
                     snackbarHostState = snackbarHostState,
                     calculatorScreenContent = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Calculator Screen Placeholder (Preview)")
                         }
                     },
                     historyScreenContent = { // Simulate being on history screen for preview
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("History Screen Placeholder (Preview)")
                         }
                     },
                     splitCalculatorScreenContent = { _ ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Split Calculator Placeholder (Preview)")
                         }
                     },
                     sipCalculatorScreenContent = { _ ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("SIP Calculator Placeholder (Preview)")
                         }
                     }
@@ -232,7 +258,12 @@ fun AppContentPreviewPhone() {
  * @author DroidSwap
  */
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, name = "Foldable Scaffold with NavGraph Placeholders", widthDp = 673, heightDp = 841)
+@Preview(
+    showBackground = true,
+    name = "Foldable Scaffold with NavGraph Placeholders",
+    widthDp = 673,
+    heightDp = 841
+)
 @Composable
 fun AppContentPreviewFoldable() {
     CalcTheme {
@@ -251,22 +282,34 @@ fun AppContentPreviewFoldable() {
                     modifier = modifier,
                     snackbarHostState = snackbarHostState,
                     calculatorScreenContent = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Calculator Screen Placeholder (Preview)")
                         }
                     },
                     historyScreenContent = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("History Screen Placeholder (Preview)")
                         }
                     },
                     splitCalculatorScreenContent = { _ ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Split Calculator Placeholder (Preview)")
                         }
                     },
                     sipCalculatorScreenContent = { _ ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("SIP Calculator Placeholder (Preview)")
                         }
                     }
@@ -281,7 +324,12 @@ fun AppContentPreviewFoldable() {
  * @author DroidSwap
  */
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, name = "Tablet Portrait Scaffold with NavGraph Placeholders", widthDp = 800, heightDp = 1280)
+@Preview(
+    showBackground = true,
+    name = "Tablet Portrait Scaffold with NavGraph Placeholders",
+    widthDp = 800,
+    heightDp = 1280
+)
 @Composable
 fun AppContentPreviewTabletPortrait() {
     CalcTheme {
@@ -300,17 +348,26 @@ fun AppContentPreviewTabletPortrait() {
                     modifier = modifier,
                     snackbarHostState = snackbarHostState,
                     calculatorScreenContent = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Calculator Screen Placeholder (Preview)")
                         }
                     },
                     historyScreenContent = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("History Screen Placeholder (Preview)")
                         }
                     },
                     splitCalculatorScreenContent = { _ ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Split Calculator Placeholder (Preview)")
                         }
                     },
