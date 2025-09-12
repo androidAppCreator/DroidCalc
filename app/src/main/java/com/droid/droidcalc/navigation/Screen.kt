@@ -52,13 +52,13 @@ sealed class Screen(
      * Represents the SIP (Systematic Investment Plan) Calculator screen.
      * This screen allows users to perform SIP-related calculations.
      */
-    data object SIPCalculator : Screen(
+    /*data object SIPCalculator : Screen(
         route = "sip_calculator_landing", // Base route for the tab
         titleResId = R.string.screen_title_sip_calculator, // Needs to be defined in strings.xml
         icon = R.drawable.ic_sip
-    )
+    )*/
 
-    // Parameterized routes like "split/{total}" and "sip/{initialAmount}" 
+    // Parameterized routes like "split/{total}" and "sip/{initialAmount}"
     // will be defined directly in AppNavGraph.kt arguments for more flexibility.
 }
 
@@ -70,7 +70,6 @@ sealed class Screen(
 val bottomNavScreens = listOf(
     Screen.Calculator,
     Screen.SplitCalculator,
-    Screen.SIPCalculator
 )
 
 /**
@@ -82,5 +81,5 @@ val allScreens = listOf(
     Screen.Calculator,
     Screen.History,
     Screen.SplitCalculator,
-    Screen.SIPCalculator
+//    Screen.SIPCalculator
 )

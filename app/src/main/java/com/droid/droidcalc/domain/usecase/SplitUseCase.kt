@@ -1,28 +1,11 @@
-/**
- * This file defines the use case for splitting a bill among participants using various algorithms.
- * It handles calculations with BigDecimal for precision, including tip, tax, and remainder distribution.
- *
- * @author DroidSwap
- */
 package com.droid.droidcalc.domain.usecase
 
 import com.droid.droidcalc.domain.model.Participant
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.math.MathContext
-import javax.inject.Inject // Added for Hilt
+import java.math.RoundingMode
+import javax.inject.Inject
 
-/**
- * Enum representing the different algorithms available for splitting the bill.
- * @author DroidSwap
- */
-enum class SplitAlgorithm {
-    EQUAL,
-    FIXED_THEN_EQUAL,
-    PERCENTAGE,
-    WEIGHTED,
-    RATIO
-}
 
 /**
  * Use case responsible for calculating the split of a total amount among participants
@@ -35,7 +18,8 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
 
     private val twoDecimalScale = 2
     private val defaultRoundingMode = RoundingMode.HALF_UP
-    private val precisionContext = MathContext.DECIMAL128 // High precision for intermediate calculations
+    private val precisionContext =
+        MathContext.DECIMAL128 // High precision for intermediate calculations
 
     /**
      * Calculates the split amount for each participant.
@@ -66,19 +50,37 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
 
         val totalAmountToSplit = totalBill + tipAmount + taxAmount
         if (totalAmountToSplit <= BigDecimal.ZERO && algorithm != SplitAlgorithm.EQUAL) {
-             // Allow splitting zero equally (results in zero for everyone)
+            // Allow splitting zero equally (results in zero for everyone)
             if (totalAmountToSplit < BigDecimal.ZERO) throw IllegalArgumentException("Total amount to split cannot be negative.")
-            return participants.associate { it.id to BigDecimal.ZERO.setScale(twoDecimalScale, defaultRoundingMode) }
+            return participants.associate {
+                it.id to BigDecimal.ZERO.setScale(
+                    twoDecimalScale,
+                    defaultRoundingMode
+                )
+            }
         }
 
         val calculatedShares = when (algorithm) {
             SplitAlgorithm.EQUAL -> calculateEqualSplit(totalAmountToSplit, participants)
-            SplitAlgorithm.FIXED_THEN_EQUAL -> calculateFixedThenEqualSplit(totalAmountToSplit, participants)
+            SplitAlgorithm.FIXED_THEN_EQUAL -> calculateFixedThenEqualSplit(
+                totalAmountToSplit,
+                participants
+            )
+
             SplitAlgorithm.PERCENTAGE -> calculatePercentageSplit(totalAmountToSplit, participants)
-            SplitAlgorithm.WEIGHTED -> calculateWeightedSplit(totalAmountToSplit, participants, isRatio = false)
-            SplitAlgorithm.RATIO -> calculateWeightedSplit(totalAmountToSplit, participants, isRatio = true)
+            SplitAlgorithm.WEIGHTED -> calculateWeightedSplit(
+                totalAmountToSplit,
+                participants,
+                isRatio = false
+            )
+
+            SplitAlgorithm.RATIO -> calculateWeightedSplit(
+                totalAmountToSplit,
+                participants,
+                isRatio = true
+            )
         }
-        
+
         return distributeRemainder(calculatedShares, totalAmountToSplit, participants)
     }
 
@@ -113,13 +115,14 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
 
         val finalShares = fixedShares.toMutableMap()
         if (participantsForEqualSplit.isNotEmpty() && remainingAmount > BigDecimal.ZERO) {
-            val equalShare = remainingAmount.divide(BigDecimal(participantsForEqualSplit.size), precisionContext)
+            val equalShare =
+                remainingAmount.divide(BigDecimal(participantsForEqualSplit.size), precisionContext)
             participantsForEqualSplit.forEach {
                 finalShares[it.id] = (finalShares[it.id] ?: BigDecimal.ZERO) + equalShare
             }
         } else {
             participantsForEqualSplit.forEach {
-                 finalShares[it.id] = (finalShares[it.id] ?: BigDecimal.ZERO)
+                finalShares[it.id] = (finalShares[it.id] ?: BigDecimal.ZERO)
             }
         }
         participants.forEach { p ->
@@ -135,12 +138,19 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
         amount: BigDecimal,
         participants: List<Participant>
     ): Map<String, BigDecimal> {
-        val totalPercentage = participants.sumOf { it.percentageInput.toBigDecimalOrNull() ?: BigDecimal.ZERO }
-        if (totalPercentage.compareTo(BigDecimal(100)) != 0 && amount > BigDecimal.ZERO && totalPercentage.compareTo(BigDecimal.ZERO) != 0) {
+        val totalPercentage =
+            participants.sumOf { it.percentageInput.toBigDecimalOrNull() ?: BigDecimal.ZERO }
+        if (totalPercentage.compareTo(BigDecimal(100)) != 0 && amount > BigDecimal.ZERO && totalPercentage.compareTo(
+                BigDecimal.ZERO
+            ) != 0
+        ) {
             // Allow sum not equal to 100, will distribute proportionally if totalPercentage > 0
         } else if (totalPercentage.compareTo(BigDecimal.ZERO) == 0 && amount > BigDecimal.ZERO) {
-             throw IllegalArgumentException("Total percentage cannot be zero if amount is to be split by percentage.")
-        } else if (totalPercentage.compareTo(BigDecimal(100)) != 0 && totalPercentage.compareTo(BigDecimal.ZERO) != 0) {
+            throw IllegalArgumentException("Total percentage cannot be zero if amount is to be split by percentage.")
+        } else if (totalPercentage.compareTo(BigDecimal(100)) != 0 && totalPercentage.compareTo(
+                BigDecimal.ZERO
+            ) != 0
+        ) {
             // This condition is for cases where amount might be zero, but sum of percentages is not 100.
             // Depending on desired behavior, could warn or proceed (as it will result in zero shares anyway if amount is zero).
         }
@@ -149,7 +159,8 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
         return participants.associate { p ->
             val percentage = p.percentageInput.toBigDecimalOrNull() ?: BigDecimal.ZERO
             val share = if (totalPercentage > BigDecimal.ZERO) {
-                amount.multiply(percentage, precisionContext).divide(totalPercentage, precisionContext)
+                amount.multiply(percentage, precisionContext)
+                    .divide(totalPercentage, precisionContext)
             } else BigDecimal.ZERO
             p.id to share
         }
@@ -170,9 +181,12 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
         }
 
         return participants.associate { p ->
-            val weightOrRatioValue = (if (isRatio) p.ratioInput else p.weightInput).toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val weightOrRatioValue =
+                (if (isRatio) p.ratioInput else p.weightInput).toBigDecimalOrNull()
+                    ?: BigDecimal.ZERO
             val share = if (totalWeightOrRatio > BigDecimal.ZERO) {
-                amount.multiply(weightOrRatioValue, precisionContext).divide(totalWeightOrRatio, precisionContext)
+                amount.multiply(weightOrRatioValue, precisionContext)
+                    .divide(totalWeightOrRatio, precisionContext)
             } else BigDecimal.ZERO
             p.id to share
         }
@@ -181,34 +195,43 @@ class SplitUseCase @Inject constructor() { // Added @Inject constructor for Hilt
     private fun distributeRemainder(
         initialShares: Map<String, BigDecimal>,
         totalAmountToSplit: BigDecimal,
-        participants: List<Participant> 
+        participants: List<Participant>
     ): Map<String, BigDecimal> {
         val roundedShares = initialShares.mapValues {
             it.value.setScale(twoDecimalScale, defaultRoundingMode)
         }.toMutableMap()
 
         var currentSum = roundedShares.values.fold(BigDecimal.ZERO, BigDecimal::add)
-        var remainder = totalAmountToSplit.setScale(twoDecimalScale, defaultRoundingMode) - currentSum
-        
+        var remainder =
+            totalAmountToSplit.setScale(twoDecimalScale, defaultRoundingMode) - currentSum
+
         val penny = BigDecimal("0.01").setScale(twoDecimalScale, defaultRoundingMode)
 
         val sortedParticipantsByFraction = participants
             .filter { initialShares.containsKey(it.id) } // Ensure participant is in initialShares
             .sortedByDescending { participant ->
                 val initialShare = initialShares[participant.id] ?: BigDecimal.ZERO
-                initialShare.remainder(BigDecimal.ONE) 
+                initialShare.remainder(BigDecimal.ONE)
             }
-        
+
         var participantIndex = 0
         val maxIterations = sortedParticipantsByFraction.size * 2 // Safety break
 
-        while (remainder.abs().compareTo(penny.divide(BigDecimal(2), precisionContext)) >= 0 && participantIndex < maxIterations) {
-             if (sortedParticipantsByFraction.isEmpty()) break // No participants to distribute to
+        while (remainder.abs().compareTo(
+                penny.divide(
+                    BigDecimal(2),
+                    precisionContext
+                )
+            ) >= 0 && participantIndex < maxIterations
+        ) {
+            if (sortedParticipantsByFraction.isEmpty()) break // No participants to distribute to
 
-            val participantToAdjust = sortedParticipantsByFraction[participantIndex % sortedParticipantsByFraction.size]
-            
+            val participantToAdjust =
+                sortedParticipantsByFraction[participantIndex % sortedParticipantsByFraction.size]
+
             if (remainder > BigDecimal.ZERO) {
-                roundedShares[participantToAdjust.id] = (roundedShares[participantToAdjust.id] ?: BigDecimal.ZERO) + penny
+                roundedShares[participantToAdjust.id] =
+                    (roundedShares[participantToAdjust.id] ?: BigDecimal.ZERO) + penny
                 remainder -= penny
             } else if (remainder < BigDecimal.ZERO) {
                 val currentShare = roundedShares[participantToAdjust.id] ?: BigDecimal.ZERO

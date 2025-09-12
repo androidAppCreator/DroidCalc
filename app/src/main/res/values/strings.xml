@@ -60,8 +60,9 @@
     <string name="split_participant_ratio_label">Ratio</string>
 
     <!-- SplitScreen -->
-    <string name="split_screen_title">Split Bill</string>
     <string name="split_add_participant_desc">Add new participant</string>
+    <string name="split_total_bill_amount_label">Total Bill Amount</string>
+    <string name="split_initial_total_hint">Initial Total</string>
     <string name="split_remove_participant_desc">Remove participant</string>
     <string name="split_initial_total_label">Initial Total: %1$s</string>
     <string name="split_tip_label">Tip Amount</string>
@@ -69,13 +70,7 @@
     <string name="split_participants_header">Participants</string>
     <string name="split_calculate_button">Calculate Split</string>
     <string name="split_results_header">Results</string>
-    <string name="split_total_to_split_label">Total to Split: %1$s</string>
-    <string name="split_rounding_info_desc">Information about rounding</string>
     <string name="split_unknown_participant">Unknown Participant</string>
-    <string name="split_rounding_title">Rounding Information</string>
-    <string name="split_ok_button">OK</string>
-    <string name="split_rounding_details">Individual shares are rounded to the nearest cent. Any minor difference due to rounding is typically distributed to one or more participants to ensure the sum matches the total amount.</string>
-    <string name="split_algorithm_label">Split Algorithm</string>
     <string name="split_participant_name_label">Participant Name</string>
     <string name="split_fixed_amount_label">Fixed Amount</string>
     <string name="split_percentage_label">Percentage (%)</string>
@@ -85,14 +80,79 @@
     <string name="split_total_amount_label">Total Amount</string>
     <string name="split_tip_percentage_label">Tip %</string>
     <string name="split_tax_amount_label">Tax Amount</string>
-    <string name="split_algo_equal">Equal</string>
-    <string name="split_algo_fixed_then_equal">Fixed Amount then Equal</string>
-    <string name="split_algo_percentage">Percentage</string>
-    <string name="split_algo_weighted">Weighted</string>
-    <string name="split_algo_ratio">Ratio</string>
     <string name="split_participants_title">Participants</string>
     <string name="split_add_participant_button">Add</string>
     <string name="split_results_title">Results</string>
+    <string name="split_screen_title">Split Bill</string>
+    <string name="split_back_action_desc">Navigate back</string>
+    <string name="split_share_action_desc">Share split details</string>
+    <string name="split_share_action_placeholder">Share clicked! (Feature pending)</string>
+    <string name="split_merchant_name_placeholder">Merchant Name</string>
+    <string name="split_donation_note_placeholder">No donation information available.</string>
+    <string name="split_amount_left_placeholder">Calculating...</string>
+    <string name="split_total_bill_label">TOTAL BILL</string>
+    <string name="split_amount_left_label">AMOUNT LEFT</string>
+    <string name="split_merchant_icon_desc">Merchant Icon</string>
+    <string name="split_tip_label_compact">Tip</string>
+    <string name="split_tax_label_compact">Tax</string>
+    <string name="split_algorithm_label">Split method</string>
+    <string name="split_algo_equal">Equal</string>
+    <string name="split_algo_fixed_then_equal">Fixed then Equal</string>
+    <string name="split_algo_percentage">Percentage</string>
+    <string name="split_algo_weighted">Weighted</string>
+    <string name="split_algo_ratio">Ratio</string>
+    <string name="split_custom_split_header">Split with</string>
+    <string name="split_add_friend_action_inline">Add a friend</string>
+    <string name="split_total_to_split_label">Total to split: %s</string>
+    <string name="split_rounding_info_desc">Rounding information</string>
+    <string name="split_rounding_title">Rounding Details</string>
+    <string name="split_rounding_details">Individual shares are rounded to the nearest cent. The final total might have a minor difference due to this rounding, which is typically adjusted on one share or absorbed.</string>
+    <string name="split_ok_button">OK</string>
+    <string name="split_continue_button">Calculate &amp; Split</string>
+    <string name="split_donation_icon_desc">Donation information icon</string>
+    <string name="split_amount_left_display">%1$s left</string>
+    <string name="split_donation_illustration_desc">%Donation illustration</string>
+
+    <string name="split_screen_title_new_ui">Split the bill</string>
+<string name="split_share_action_desc_new_ui">Share bill details</string>
+<string name="split_custom_split_header_new_ui">Custom split</string>
+<string name="split_add_friend_action_new_ui">Add a friend</string>
+<string name="split_add_friend_action_desc_new_ui">Add a new participant to the split</string>
+<string name="split_continue_button_new_ui">Continue</string>
+<string name="split_zero_amount_usd">0.00 USD</string>
+<string name="split_screen_algorithm_label">Split Method</string>
+
+
+    <string name="split_add_friend_sheet_title">Add New Participant</string>
+    <string name="split_add_friend_name_label">Participant Name</string>
+    <string name="split_add_friend_error_name_required">Participant name cannot be empty.</string>
+    <string name="split_add_friend_email_phone_label">Email or Phone (Optional)</string> For future use
+    <string name="split_add_friend_avatar_picker_label">Choose Avatar</string> For future use
+    <string name="split_add_friend_button">Add &amp; Close</string>
+    <string name="split_add_friend_add_another_button">Add Another</string>
+    <string name="split_add_friend_quick_suggestions">Quick Suggestions</string>
+    <string name="split_add_friend_you_chip">You</string>
+    <string name="split_add_friend_invite_link_chip">Invite via Link</string>
+    <string name="split_add_friend_scan_qr_chip">Scan QR</string>
+    <string name="split_add_friend_default_share_method_label">Default Share Method</string>
+    <string name="split_add_friend_share_equal">Split Equally</string>
+    <string name="split_add_friend_share_specific">Enter Specific Amount</string>
+    <string name="split_add_friend_share_no_default">No Default (Set Later)</string>
+
+    <!--Split Participant Card-->
+    <string name="participant_card_you_label">You</string>
+    <string name="participant_card_name_label">Participant Name</string>
+    <string name="participant_card_remove_action_desc">Remove %s from split</string> // %s for participant name
+
+    <string name="participant_card_fixed_amount_label">Fixed Amount</string>
+    <string name="participant_card_percentage_label">Percentage</string> // Hint like " (%s)" for monetary value will be dynamically added
+    <string name="participant_card_weight_label">Weight (e.g., shares)</string>
+    <string name="participant_card_ratio_label">Ratio Part (e.g., 2 in 2:3)</string>
+
+    <string name="participant_card_paid_checkbox_label">Paid</string>
+    <string name="participant_card_calculating_share">Calculating...</string>
+    <string name="participant_card_paid_status">Paid</string>
+    <string name="participant_card_unpaid_status">Unpaid</string>
 
 
     <!-- SIPCalculator Screen -->

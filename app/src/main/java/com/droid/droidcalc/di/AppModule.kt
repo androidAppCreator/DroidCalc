@@ -1,6 +1,7 @@
 package com.droid.droidcalc.di
 
 import android.content.Context
+import androidx.compose.ui.graphics.Color
 import com.droid.droidcalc.data.db.AppDatabase
 import com.droid.droidcalc.data.db.HistoryDao
 import com.droid.droidcalc.data.repository.HistoryRepositoryImpl
@@ -14,6 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -83,6 +85,22 @@ object AppModule {
      */
     @Provides
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+
+    @Provides
+    @Singleton // Or appropriate scope
+    @Named("CardColorPalette") // Use a Named annotation if you might have other List<Color>
+    fun provideCardColorPalette(): List<Color> {
+        // Define your list of colors here
+        return listOf(
+            Color.Red,
+            Color.Green,
+            Color.Blue,
+            // Add more colors as needed
+            Color(0xFFFFA500), // Orange
+            Color.Yellow,
+            Color.Cyan
+        )
+    }
 
     // Add other application-wide singleton providers here as needed.
     // For example, SharedPreferences, DataStore, etc.

@@ -1,7 +1,6 @@
 /**
  * This file defines the main navigation graph for the DroidCalc application using Jetpack Navigation Compose.
- * It sets up all navigable screens and handles passing arguments between them, including the Calculator,
- * History, Split Calculator, and SIP Calculator screens.
+ * It sets up all navigable screens. Data between Calculator and Split screen is now passed via a SharedViewModel.
  * @author DroidSwap
  */
 package com.droid.droidcalc.navigation
@@ -10,6 +9,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,11 +23,7 @@ import com.droid.droidcalc.ui.split.screen.SplitScreen
 /**
  * Defines the navigation graph for the DroidCalc application.
  * This composable sets up all the navigation routes and their corresponding screen contents.
- * It supports navigation between Calculator, History, Split Calculator, and SIP Calculator screens,
- * including parameterized routes for passing data to Split and SIP calculators.
- *
- * The screen content parameters default to calling the actual screen composables, passing the necessary
- * [NavHostController] and arguments.
+ * Data passing for Split Calculator now primarily relies on a [SharedCalcSplitViewModel].
  *
  * @param navController The [NavHostController] managing navigation within this graph.
  * @param windowSizeClass The [WindowSizeClass] of the current window, potentially for adaptive layouts within screens.
@@ -36,7 +32,6 @@ import com.droid.droidcalc.ui.split.screen.SplitScreen
  * @param calculatorScreenContent Composable lambda for the Calculator screen content.
  * @param historyScreenContent Composable lambda for the History screen content.
  * @param splitCalculatorScreenContent Composable lambda for the Split Calculator screen content.
- *                                     It receives an optional `total` string argument.
  * @param sipCalculatorScreenContent Composable lambda for the SIP Calculator screen content.
  *                                   It receives an optional `initialAmount` string argument.
  * @author DroidSwap
@@ -44,16 +39,20 @@ import com.droid.droidcalc.ui.split.screen.SplitScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    windowSizeClass: WindowSizeClass, 
+    windowSizeClass: WindowSizeClass,
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState, 
+    snackbarHostState: SnackbarHostState,
     calculatorScreenContent: @Composable () -> Unit = { CalculatorScreen(navController = navController) },
     historyScreenContent: @Composable () -> Unit = { HistoryScreen(snackbarHostState = snackbarHostState) },
-    splitCalculatorScreenContent: @Composable (total: String?) -> Unit = { total ->
-        SplitScreen()
+    splitCalculatorScreenContent: @Composable (onNavigateBack: () -> Unit) -> Unit = { onNavigateBack ->
+        SplitScreen(onNavigateBack = onNavigateBack, onShareClick = { /* TODO: Implement Share from SplitScreen */})
     },
     sipCalculatorScreenContent: @Composable (initialAmount: String?) -> Unit = { initialAmount ->
-        SIPScreen()
+        // Assuming SIPScreen also uses a Hilt ViewModel that might inject SharedCalcSplitViewModel if needed
+        // or receives initialAmount differently.
+        SIPScreen() // If SIPScreen needs initialAmount, its ViewModel should handle it via SavedStateHandle or a shared VM.
+                    // For now, matching the existing signature but not explicitly passing initialAmount to SIPScreen directly.
+                    // If initialAmount for SIP is still from route, that needs specific handling.
     }
 ) {
     NavHost(
@@ -68,34 +67,34 @@ fun AppNavGraph(
             historyScreenContent()
         }
 
-        composable(Screen.SplitCalculator.route) { 
-            splitCalculatorScreenContent(null) 
+        // Updated route for SplitCalculator: No longer takes route argument for total amount.
+        // Data is passed via SharedCalcSplitViewModel.
+        composable(Screen.SplitCalculator.route) {
+            splitCalculatorScreenContent{
+                navController.popBackStack()
+            }
         }
 
+        // SIP Calculator route remains if it uses route arguments.
+        // If SIP also needs to use a shared ViewModel, its route and ViewModel would be updated similarly.
         composable(
-            route = "split/{total}",
-            arguments = listOf(navArgument("total") { 
+            route = "sip/{initialAmount}", // Assuming this is Screen.SIPCalculator.route + "/{initialAmount}"
+            arguments = listOf(navArgument("initialAmount") {
                 type = NavType.StringType
-                nullable = true 
-            })
-        ) { backStackEntry ->
-            val total = backStackEntry.arguments?.getString("total")
-            splitCalculatorScreenContent(total)
-        }
-
-        composable(Screen.SIPCalculator.route) { 
-            sipCalculatorScreenContent(null)
-        }
-
-        composable(
-            route = "sip/{initialAmount}",
-            arguments = listOf(navArgument("initialAmount") { 
-                type = NavType.StringType
-                nullable = true 
+                nullable = true
             })
         ) { backStackEntry ->
             val initialAmount = backStackEntry.arguments?.getString("initialAmount")
+            // Ensure SIPScreen or its ViewModel can handle this initialAmount argument, likely via SavedStateHandle.
+            // The lambda signature for sipCalculatorScreenContent has (String?) -> Unit.
+            // If SIPScreen() doesn't directly take initialAmount, its ViewModel should.
             sipCalculatorScreenContent(initialAmount)
         }
+
+        // Example if SIPCalculator screen was also to be simplified (assuming it has a route in Screen sealed class):
+        // composable(Screen.SIPCalculator.route) {
+        //     val sharedViewModel: SharedCalcGeneralViewModel = hiltViewModel(remember { navController.getBackStackEntry(ROUTE_OF_PARENT_GRAPH_FOR_SIP) })
+        //     SIPScreen(sharedViewModel) // Or SIPViewModel gets it by injection
+        // }
     }
 }

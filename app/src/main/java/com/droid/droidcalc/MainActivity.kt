@@ -230,7 +230,7 @@ fun AppContentPreviewPhone() {
                             Text("History Screen Placeholder (Preview)")
                         }
                     },
-                    splitCalculatorScreenContent = { _ ->
+                    splitCalculatorScreenContent = {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -238,7 +238,7 @@ fun AppContentPreviewPhone() {
                             Text("Split Calculator Placeholder (Preview)")
                         }
                     },
-                    sipCalculatorScreenContent = { _ ->
+                    sipCalculatorScreenContent = {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -297,7 +297,7 @@ fun AppContentPreviewFoldable() {
                             Text("History Screen Placeholder (Preview)")
                         }
                     },
-                    splitCalculatorScreenContent = { _ ->
+                    splitCalculatorScreenContent = {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -305,7 +305,7 @@ fun AppContentPreviewFoldable() {
                             Text("Split Calculator Placeholder (Preview)")
                         }
                     },
-                    sipCalculatorScreenContent = { _ ->
+                    sipCalculatorScreenContent = {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -363,7 +363,7 @@ fun AppContentPreviewTabletPortrait() {
                             Text("History Screen Placeholder (Preview)")
                         }
                     },
-                    splitCalculatorScreenContent = { _ ->
+                    splitCalculatorScreenContent = {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -371,7 +371,7 @@ fun AppContentPreviewTabletPortrait() {
                             Text("Split Calculator Placeholder (Preview)")
                         }
                     },
-                    sipCalculatorScreenContent = { _ ->
+                    sipCalculatorScreenContent = {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center

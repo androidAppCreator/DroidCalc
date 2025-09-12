@@ -33,6 +33,7 @@ object CalculatorContract {
     data class State(
         val expression: String = "",
         val displayValue: String = "0", // Initial display value
+        val liveEvaluation: String = "",     // Live calculation of 'expression', e.g., "8" for "2+2*3"
         val error: String? = null,
         val isResultDisplayed: Boolean = false,
         val showResultActionBottomSheet: Boolean = false,

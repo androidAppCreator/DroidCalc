@@ -7,108 +7,125 @@
  */
 package com.droid.droidcalc.ui.split
 
+import androidx.compose.ui.graphics.Color
 import com.droid.droidcalc.domain.model.Participant
-import com.droid.droidcalc.domain.usecase.SplitAlgorithm
+import com.droid.droidcalc.domain.usecase.SplitAlgorithm // Added import for SplitAlgorithm
+import com.droid.droidcalc.ui.split.model.NewParticipantData
 import java.math.BigDecimal
 
 /**
  * Defines the contract for the Split Screen, including its state, user intents, and UI effects.
- * @author DroidSwap
+ * Adheres to MVI principles, ensuring a unidirectional data flow and a single source of truth for UI state.
+ * Updated to reflect the new UI design and re-introduction of algorithm selection.
  */
 object SplitContract {
 
     /**
-     * Represents a single item in the split history carousel.
-     * This is a simplified representation for now; can be expanded with more details from Firestore.
+     * Represents a single item in the split history carousel (for future use).
      *
-     * @property id Unique identifier for the history item (e.g., Firestore document ID).
-     * @property displayTitle A title for the history item, e.g., "Split of $100.00".
-     * @property algorithmName The name of the algorithm used.
-     * @property participantCount The number of participants in that split.
+     * @property id Unique identifier for the history item.
+     * @property displayTitle A title for the history item.
+     * @property algorithmName The name of the algorithm used (still relevant for history).
+     * @property participantCount The number of participants.
      * @property timestamp The time the split was saved.
-     * @author DroidSwap
      */
     data class SplitHistoryItemDisplay(
         val id: String,
         val displayTitle: String,
-        val algorithmName: String,
+        val algorithmName: String, // Kept for historical data display
         val participantCount: Int,
-        val timestamp: Long // For sorting or display
+        val timestamp: Long
+    )
+
+    /**
+     * Represents auxiliary information about the merchant for display in the header card.
+     * Enhanced to include fields potentially needed for the new header UI.
+     *
+     * @property name The name of the merchant (e.g., "Burger Gembel").
+     * @property date The date of the transaction (e.g., "22 Jun 2023").
+     * @property iconUrl Optional URL for the merchant's avatar/icon (e.g., burger icon).
+     * @property donationNote Optional note about any donations (e.g., "Burger Gembel sends 2.99 USD for nature conservation").
+     * @property customIllustrationUrl Optional URL or resource ID for custom illustrations (e.g., windmills).
+     */
+    data class MerchantInfo(
+        val name: String,
+        val date: String,
+        val iconUrl: String? = null,
+        val donationNote: String? = null,
+        val customIllustrationUrl: String? = null // For UI elements like windmills
     )
 
     /**
      * Represents the immutable UI state for the SplitScreen.
      *
-     * @property initialTotalAmount The initial total amount passed from the CalculatorScreen (read-only on this screen).
-     * @property tipAmountInput User input for the tip amount (as a string for TextField binding).
-     * @property taxAmountInput User input for the tax amount (as a string for TextField binding).
+     * @property initialTotalAmount The initial total amount potentially passed from navigation or a previous step.
+     * @property totalAmountInput String representation of the total amount, primarily for display in the header.
      * @property participants The list of [Participant] objects involved in the split.
-     * @property selectedAlgorithm The currently selected [SplitAlgorithm].
-     * @property splitResult A map where the key is the participant ID and the value is their calculated share (as BigDecimal).
-     * @property finalTotalToSplit The total amount including bill, tip, and tax, after parsing inputs.
-     * @property isLoading Indicates if a calculation or data fetching operation is in progress.
-     * @property errorMessages A map of error messages, where the key could be a field identifier or a general error type.
-     *                         These are typically for inline field validation errors.
-     * @property showRoundingExplanation Controls the visibility of the rounding explanation UI element.
-     * @property splitHistory List of past splits fetched from Firestore for the carousel.
-     * @author DroidSwap
+     * @property selectedAlgorithm The currently selected [SplitAlgorithm] for calculating the split.
+     * @property splitResult A map of participant ID to their calculated monetary share.
+     * @property participantPercentages A map of participant ID to their share represented as a percentage string (e.g., "20%").
+     * @property participantCardColors A map of participant ID to the specific [Color] for their card background.
+     * @property finalTotalToSplit The total amount that was actually split (can be same as initialTotalAmount or adjusted).
+     * @property isLoading Indicates if a background operation (like calculation) is in progress.
+     * @property errorMessages A map of error messages for UI fields or general errors.
+     * @property splitHistory List of past splits (for future use).
+     * @property merchantInfo Optional information about the merchant for the header card.
+     * @property amountLeftToSplit Optional display of how much amount is left if the split is not perfectly balanced (for header card).
      */
     data class SplitScreenState(
         val initialTotalAmount: BigDecimal = BigDecimal.ZERO,
-        val tipAmountInput: String = "",
-        val taxAmountInput: String = "",
-        val participants: List<Participant> = listOf(Participant(name = "Participant 1")), // Start with one participant
-        val selectedAlgorithm: SplitAlgorithm = SplitAlgorithm.EQUAL,
-        val splitResult: Map<String, BigDecimal>? = null, // Participant ID to their share
+        val totalAmountInput: String = "", // Primarily for display now
+        val participants: List<Participant> = emptyList(),
+        val selectedAlgorithm: SplitAlgorithm = SplitAlgorithm.EQUAL, // Re-added selectedAlgorithm
+        val splitResult: Map<String, BigDecimal>? = null,
+        val participantPercentages: Map<String, String> = emptyMap(),
+        val participantCardColors: Map<String, Color> = emptyMap(),
         val finalTotalToSplit: BigDecimal? = null,
         val isLoading: Boolean = false,
-        val errorMessages: Map<String, String> = emptyMap(), // e.g., "tipAmountError" to "Invalid tip"
-        val showRoundingExplanation: Boolean = false,
-        val splitHistory: List<SplitHistoryItemDisplay> = emptyList()
+        val errorMessages: Map<String, String> = emptyMap(),
+        val splitHistory: List<SplitHistoryItemDisplay> = emptyList(),
+        val merchantInfo: MerchantInfo? = null,
+        val amountLeftToSplit: BigDecimal? = null
     )
 
     /**
      * Defines the user intents (actions) that can be triggered from the Split Screen UI.
-     * These are processed by the [com.droid.droidcalc.ui.split.viewmodel.SplitViewModel].
-     * @author DroidSwap
      */
     sealed class SplitIntent {
-        /** Intent to update the tip amount input string. */
-        data class UpdateTipAmount(val amount: String) : SplitIntent()
-        /** Intent to update the tax amount input string. */
-        data class UpdateTaxAmount(val amount: String) : SplitIntent()
+        /** Intent to update the total bill amount (likely from a previous screen or dialog). */
+        data class UpdateTotalAmountInput(val input: String) : SplitIntent()
+
         /** Intent to select a specific split algorithm. */
-        data class SelectAlgorithm(val algorithm: SplitAlgorithm) : SplitIntent()
-        /** Intent to add a new participant. */
-        data object AddParticipant : SplitIntent()
+        data class SelectAlgorithm(val algorithm: SplitAlgorithm) : SplitIntent() // Re-added SelectAlgorithm intent
+
+        /** Intent to add a new participant with data from the AddFriendSheet. */
+        data class AddNewParticipant(val data: NewParticipantData) : SplitIntent()
         /** Intent to remove a participant by their ID. */
         data class RemoveParticipant(val participantId: String) : SplitIntent()
-        /** Intent to update a field of a specific participant. */
+        /** Intent to update a field of a specific participant (e.g., toggling isPaid). */
         data class UpdateParticipantField(val participantId: String, val updateAction: (Participant) -> Participant) : SplitIntent()
-        /** Intent to trigger the split calculation. */
+        
+        /** Intent to trigger the split calculation or proceed to the next step. */
         data object CalculateSplit : SplitIntent()
-        /** Intent to toggle the visibility of the rounding explanation. */
-        data class ToggleRoundingExplanation(val show: Boolean) : SplitIntent()
+        
         /** Intent to clear a specific error message by its key. */
         data class ClearError(val errorKey: String) : SplitIntent()
-        /** Intent to load split history (example for future use). */
-        data object LoadHistory : SplitIntent() // Example
+        /** Intent to load split history (for future use). */
+        data object LoadHistory : SplitIntent() 
+        /** Intent to show a temporary snackbar message. */
+        data class ShowSnackbarMessage(val message: String) : SplitIntent()
+        /** Intent to initiate the share flow. */
+        data object ShareBillAction : SplitIntent()
     }
 
     /**
      * Defines one-time UI effects that can be triggered by the ViewModel.
-     * These are typically handled by the UI layer to show transient messages or trigger navigation.
-     * @author DroidSwap
      */
     sealed interface UiEffect {
         /**
          * Effect to show a transient Snackbar message to the user.
-         * @property message The message to be displayed. Ideally, this should be a string resource ID
-         *                   to support localization, but for simplicity, a direct String is used here.
-         *                   The ViewModel should resolve this from string resources if possible.
-         * @author DroidSwap
+         * @property message The message to be displayed.
          */
         data class ShowSnackbar(val message: String) : UiEffect
-        // Future effects like NavigateTo can be added here.
     }
 }

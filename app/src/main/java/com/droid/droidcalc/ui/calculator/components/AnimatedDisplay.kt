@@ -69,16 +69,20 @@ private object DisplayDimens {
 }
 
 /**
- * A composable function that displays the calculator's expression and result with animations.
- * It uses [AnimatedContent] for smooth transitions when the displayed value changes.
- * Features include slide & fade transitions and a scale pop animation when a new result is shown.
- * A subtle gradient shimmer background is applied when a final, non-error result is displayed.
+ * A composable function that displays the calculator's expression, live evaluation, and result with animations.
+ * The top area shows the raw input expression when the user is typing.
+ * The main display area (using [AnimatedContent]) shows either a live evaluation of the current expression
+ * or the final result (or error) after calculation or if live evaluation is not available.
+ *
+ * Features include slide & fade transitions and a scale pop animation when a new final result is shown.
  * The result display can be made clickable to trigger further actions.
  *
- * @param expression The current mathematical expression string.
- * @param result The main display value (current input, live evaluation, final result, or error).
+ * @param expression The current mathematical expression string (raw user input).
+ * @param liveEvaluation The live calculated result of the `expression` string, shown during input.
+ * @param result The main display value to show in `AnimatedContent` (current input segment, final result, or error).
+ *               This is typically `uiState.displayValue` from the ViewModel.
  * @param isError Indicates if the current `result` string represents an error from a final calculation.
- * @param isResultDisplayed Indicates if `result` is a final submitted result.
+ * @param isResultDisplayed Indicates if `result` is a final submitted result (e.g., after '=' is pressed).
  * @param onResultClick Lambda to be invoked when the result display area is clicked and is actionable.
  * @param modifier The modifier to be applied to this component.
  * @author DroidSwap
@@ -87,28 +91,30 @@ private object DisplayDimens {
 @Composable
 fun AnimatedDisplay(
     expression: String,
-    result: String,
+    liveEvaluation: String,
+    result: String, // This is the uiState.displayValue (current input, final result, or error)
     isError: Boolean,
     isResultDisplayed: Boolean,
     modifier: Modifier = Modifier,
     onResultClick: () -> Unit = {} // Default no-op
 ) {
-    var previousResult by remember { mutableStateOf<String?>(null) }
+    var previousResultForPopAnimation by remember { mutableStateOf<String?>(null) }
     var showScalePop by remember { mutableStateOf(false) }
-    var isResultAnimation by remember { mutableStateOf(false) }
+    var isResultPopAnimationTrigger by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
 
+    // Trigger scale pop animation for final results
     LaunchedEffect(result, isResultDisplayed) {
-        if (isResultDisplayed && result != previousResult) {
+        if (isResultDisplayed && result != previousResultForPopAnimation) {
             showScalePop = true
             delay(MotionTokens.LongDuration + AnimationConstants.POP_ANIMATION_EXTRA_DELAY_MS)
             showScalePop = false
-            previousResult = result
-            isResultAnimation = true
-            delay(100)
-            isResultAnimation = false
+            previousResultForPopAnimation = result
+            isResultPopAnimationTrigger = true // Used for specific transition in AnimatedContent
+            delay(100) // Duration for the specific transition
+            isResultPopAnimationTrigger = false
         } else if (!isResultDisplayed) {
-            previousResult = null
+            previousResultForPopAnimation = null // Reset if we are back to input mode
         }
     }
 
@@ -132,7 +138,9 @@ fun AnimatedDisplay(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.Bottom
     ) {
-        if (expression.isNotEmpty() && !isResultDisplayed && !isResultAnimation) {
+        // Display the raw input expression at the top only when user is actively typing (not after result is shown)
+        // and there is an expression to show.
+        if (expression.isNotEmpty() && !isResultDisplayed) {
             Text(
                 text = expression,
                 style = MaterialTheme.typography.headlineSmall.copy(fontSize = DisplayDimens.ExpressionTextSize),
@@ -140,15 +148,22 @@ fun AnimatedDisplay(
                 textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
-                overflow = TextOverflow.Visible
+                overflow = TextOverflow.Visible // Allow expression to overflow temporarily if needed during typing
             )
             Spacer(modifier = Modifier.height(DisplayDimens.ExpressionResultSpacing))
         }
 
+        // Determine what to show in the main animated display area
+        val mainDisplayTarget = when {
+            !isResultDisplayed && liveEvaluation.isNotBlank() -> liveEvaluation // Show live evaluation if available during input
+            else -> result // Otherwise, show the primary result (current input, final result, or error)
+        }
+
         AnimatedContent(
-            targetState = result,
+            targetState = mainDisplayTarget,
             transitionSpec = {
-                if (isResultAnimation || targetState.length > initialState.length || (targetState != "0" && initialState == "0")) {
+                // Use pop animation for final results, otherwise standard slide
+                if (isResultPopAnimationTrigger || (targetState.length > initialState.length && !initialState.endsWith("...")) || (targetState != "0" && initialState == "0")) {
                     (slideInVertically { height -> height } + fadeIn()).togetherWith(
                         slideOutVertically { height -> -height } + fadeOut())
                 } else {
@@ -157,36 +172,37 @@ fun AnimatedDisplay(
                 }.using(SizeTransform(clip = false))
             },
             label = "animatedDisplayContent"
-        ) { targetResult ->
-            val isClickableResult = isResultDisplayed && !isError
-            // Use the Material 3 ripple factory function directly
-            val ripple = ripple(bounded = false)
+        ) { targetDisplayString ->
+            val isClickableResult = isResultDisplayed && !isError && result == targetDisplayString // Clickable only if it's the final, non-error result
+            val rippleEffect = remember { ripple(bounded = false) } // Ripple for clickable results
+
             Box(
                 modifier = Modifier.clickable(
                     interactionSource = interactionSource,
                     enabled = isClickableResult,
-                    indication = if (isClickableResult) ripple else null,
+                    indication = if (isClickableResult) rippleEffect else null,
                     onClick = { if (isClickableResult) onResultClick() },
                     role = if (isClickableResult) Role.Button else null
                 )
             ) {
-                if (isResultDisplayed && !isError) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                    )
-                }
+                // Optional: Background highlight for final, non-error results (e.g., shimmer)
+                // if (isResultDisplayed && !isError && result == targetDisplayString) {
+                //     Box(modifier = Modifier.matchParentSize().background(ShimmerBrush()))
+                // }
+
                 Text(
-                    text = targetResult,
+                    text = targetDisplayString,
                     style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = if (targetResult.length > DisplayDimens.RESULT_TEXT_LENGTH_THRESHOLD) DisplayDimens.ResultTextSmallSize else DisplayDimens.ResultTextLargeSize
+                        fontSize = if (targetDisplayString.length > DisplayDimens.RESULT_TEXT_LENGTH_THRESHOLD) DisplayDimens.ResultTextSmallSize else DisplayDimens.ResultTextLargeSize
                     ),
-                    color = if (isError && isResultDisplayed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    // Color depends on whether it's a final error result or standard display
+                    color = if (isError && isResultDisplayed && result == targetDisplayString) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .fillMaxWidth()
                         .graphicsLayer() {
-                            if (isResultDisplayed && !isError) {
+                            // Apply scale pop animation only to final, non-error results
+                            if (isResultDisplayed && !isError && result == targetDisplayString) {
                                 scaleX = scale
                                 scaleY = scale
                             }
@@ -199,6 +215,7 @@ fun AnimatedDisplay(
     }
 }
 
+// Previews need to be updated to reflect new parameter `liveEvaluation`
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Final Result Display")
 @Composable
 fun AnimatedDisplayPreviewFinalResult() {
@@ -206,6 +223,7 @@ fun AnimatedDisplayPreviewFinalResult() {
         Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
                 expression = "123+456",
+                liveEvaluation = "", // No live eval when final result is shown
                 result = "579",
                 isError = false,
                 isResultDisplayed = true,
@@ -223,6 +241,7 @@ fun AnimatedDisplayErrorPreview() {
         Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
                 expression = "1/0",
+                liveEvaluation = "", // No live eval when final error is shown
                 result = "Error",
                 isError = true,
                 isResultDisplayed = true,
@@ -233,16 +252,17 @@ fun AnimatedDisplayErrorPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Ongoing Input Display")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Ongoing Input with Live Eval")
 @Composable
-fun AnimatedDisplayInputPreview() {
+fun AnimatedDisplayInputWithLiveEvalPreview() {
     CalcTheme {
         Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
-                expression = "123+45*",
-                result = "123+45*",
+                expression = "123+45*2",       // Raw input
+                liveEvaluation = "213",      // Live result of 123 + (45*2) -> 123 + 90 = 213
+                result = "123+45*2",       // Current input segment shown if no live eval
                 isError = false,
-                isResultDisplayed = false,
+                isResultDisplayed = false,     // User is typing
                 modifier = Modifier.fillMaxWidth(),
                 onResultClick = {}
             )
@@ -250,14 +270,33 @@ fun AnimatedDisplayInputPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Live Evaluation Display")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Ongoing Input no Live Eval (incomplete)")
 @Composable
-fun AnimatedDisplayLiveEvaluationPreview() {
+fun AnimatedDisplayInputNoLiveEvalPreview() {
     CalcTheme {
         Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
             AnimatedDisplay(
-                expression = "24+2",
-                result = "26",
+                expression = "123+45*",       // Raw input, ends with operator
+                liveEvaluation = "",          // No live eval because it's incomplete
+                result = "123+45*",       // Current input segment shown
+                isError = false,
+                isResultDisplayed = false,     // User is typing
+                modifier = Modifier.fillMaxWidth(),
+                onResultClick = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "Initial State")
+@Composable
+fun AnimatedDisplayInitialStatePreview() {
+    CalcTheme {
+        Box(Modifier.padding(DisplayDimens.PreviewContainerPadding)) {
+            AnimatedDisplay(
+                expression = "",
+                liveEvaluation = "",
+                result = "0", // Default display
                 isError = false,
                 isResultDisplayed = false,
                 modifier = Modifier.fillMaxWidth(),

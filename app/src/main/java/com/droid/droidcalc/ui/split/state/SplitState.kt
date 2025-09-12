@@ -1,9 +1,3 @@
-/**
- * Defines the UI state for the Split Screen (SplitCalculator).
- * This file contains the data class representing all information required to render the Split Screen.
- *
- * @author DroidSwap
- */
 package com.droid.droidcalc.ui.split.state
 
 import com.droid.droidcalc.domain.model.Participant

@@ -1,34 +1,61 @@
-/**
- * This file defines the SplitScreen composable, which is the main UI for the bill splitting feature.
- * It allows users to input bill details, manage participants, select a splitting algorithm,
- * and view the calculated shares. It follows MVI principles, observing state from [SplitViewModel]
- * and delegating user actions to it via [SplitContract.SplitIntent].
- *
- * @author DroidSwap
- */
 package com.droid.droidcalc.ui.split.screen
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.droid.droidcalc.R // Assuming R class will be generated for string resources
+import com.droid.droidcalc.R
 import com.droid.droidcalc.domain.model.Participant
 import com.droid.droidcalc.domain.usecase.SplitAlgorithm
 import com.droid.droidcalc.ui.split.SplitContract
@@ -36,30 +63,46 @@ import com.droid.droidcalc.ui.split.viewmodel.SplitViewModel
 import com.droid.droidcalc.ui.theme.CalcTheme
 import java.math.BigDecimal
 import java.text.NumberFormat
+import java.util.Locale
+
+// Constants for padding and spacing within SplitScreen, aligned with new UI.
+private object SplitScreenDimens {
+    val ScreenPadding = 16.dp
+    val SectionSpacing = 16.dp
+    val ItemSpacing = 8.dp
+    val StickyButtonHeight = 72.dp // Height for the area reserved for the sticky button
+    val BottomNavHeight = 80.dp // Approximate height for bottom navigation bar if present
+    val ParticipantCardVerticalSpacing = 8.dp
+}
 
 /**
- * The main composable for the Split Screen.
- * It observes [SplitContract.SplitScreenState] and dispatches [SplitContract.SplitIntent] to [SplitViewModel].
- * It also handles [SplitContract.UiEffect] for showing Snackbars.
+ * The main composable entry point for the Split Bill Screen feature, updated to the new UI design.
+ * This screen observes UI state from [SplitViewModel] and dispatches user intents for processing.
+ * It adheres to MVI principles by remaining stateless and delegating logic to the ViewModel.
  *
- * @param viewModel The [SplitViewModel] instance for this screen.
- * @author DroidSwap
+ * @param viewModel The [SplitViewModel] instance for this screen, typically injected by Hilt.
+ * @param onNavigateBack Callback invoked when a back navigation action is requested.
+ * @param onShareClick Callback invoked when the share action is triggered.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SplitScreen(
-    viewModel: SplitViewModel = hiltViewModel()
+    viewModel: SplitViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var showAddFriendSheet by remember { mutableStateOf(false) }
 
-    // Handle UiEffects from the ViewModel
-    LaunchedEffect(key1 = viewModel) { // Or key1 = Unit if viewModel instance doesn't change
+    LaunchedEffect(key1 = Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is SplitContract.UiEffect.ShowSnackbar -> {
+                    keyboardController?.hide()
                     snackbarHostState.showSnackbar(
-                        message = effect.message, // ViewModel should resolve this from string resources ideally
+                        message = effect.message,
                         duration = SnackbarDuration.Short
                     )
                 }
@@ -68,205 +111,267 @@ fun SplitScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            // MAX_PARTICIPANTS is 10, defined in ViewModel. Consider moving this logic to ViewModel state.
-            if (uiState.participants.size < 10) { 
-                FloatingActionButton(onClick = { viewModel.processIntent(SplitContract.SplitIntent.AddParticipant) }) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.split_add_participant_desc)) // Assuming R.string.split_add_participant_desc exists
-                }
-            }
-        }
+        topBar = {
+            SplitScreenTopAppBar(
+                onNavigateBack = onNavigateBack,
+                onShareClick = onShareClick // Pass the onShareClick directly
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         SplitScreenContent(
             modifier = Modifier.padding(paddingValues),
             uiState = uiState,
-            onIntent = viewModel::processIntent
+            onIntent = viewModel::processIntent,
+            onAddFriendClick = { showAddFriendSheet = true }
+        )
+    }
+
+    if (showAddFriendSheet) {
+        AddFriendSheet(
+            onDismissRequest = { showAddFriendSheet = false },
+            onAddParticipant = { newParticipantData, addAnother ->
+                viewModel.processIntent(
+                    SplitContract.SplitIntent.AddNewParticipant(newParticipantData)
+                )
+                if (!addAnother) {
+                    showAddFriendSheet = false
+                }
+            }
         )
     }
 }
 
 /**
- * Content composable for the SplitScreen.
- * Displays input fields, participant list, algorithm selection, and results.
- * All user interactions are sent as [SplitContract.SplitIntent] via the [onIntent] lambda.
- * Note: Uses hardcoded dp values; recommend using dimensionResource for full guideline adherence.
+ * Composable for the Top App Bar of the Split Screen, matching the new UI.
+ * Title is "Split the bill".
  *
- * @param modifier Modifier for this composable.
- * @param uiState The current [SplitContract.SplitScreenState] to render.
- * @param onIntent Lambda to send [SplitContract.SplitIntent] to the ViewModel.
- * @author DroidSwap
+ * @param onNavigateBack Lambda invoked when the navigation icon (back arrow) is clicked.
+ * @param onShareClick Lambda invoked when the share action icon (upload icon) is clicked.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SplitScreenContent(
+private fun SplitScreenTopAppBar(
+    onNavigateBack: () -> Unit,
+    onShareClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(id = R.string.split_screen_title_new_ui), // "Split the bill"
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal) // As per UI
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.split_back_action_desc)
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = stringResource(R.string.split_share_action_desc_new_ui)
+                )
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface
+        )
+    )
+}
+
+/**
+ * Main content layout for the SplitScreen, updated for the new UI design.
+ * It features a header card, algorithm selector, a list of participants, and a sticky "Continue" button.
+ *
+ * @param modifier Modifier for this composable, typically including padding from the Scaffold.
+ * @param uiState The current [SplitContract.SplitScreenState] to render the UI from.
+ * @param onIntent Lambda to send [SplitContract.SplitIntent] to the ViewModel for processing user actions.
+ * @param onAddFriendClick Lambda to trigger the display of the "Add Friend" modal bottom sheet.
+ */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun SplitScreenContent(
     modifier: Modifier = Modifier,
     uiState: SplitContract.SplitScreenState,
-    onIntent: (SplitContract.SplitIntent) -> Unit
+    onIntent: (SplitContract.SplitIntent) -> Unit,
+    onAddFriendClick: () -> Unit
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp), // Example of hardcoded dp, ideally dimensionResource
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        item {
-            Text(
-                // Assuming R.string.split_initial_total_label is like "Initial Total: %1$s"
-                text = stringResource(R.string.split_initial_total_label, uiState.initialTotalAmount.toPlainString()), 
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
+    val currencyFormatter = remember {
+        NumberFormat.getCurrencyInstance(Locale.getDefault()).apply {
+            maximumFractionDigits = 2
+            minimumFractionDigits = 2
         }
+    }
 
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = uiState.tipAmountInput,
-                    onValueChange = { onIntent(SplitContract.SplitIntent.UpdateTipAmount(it)) },
-                    label = { Text(stringResource(R.string.split_tip_label)) }, // Assuming R.string.split_tip_label exists
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                    modifier = Modifier.weight(1f),
-                    isError = uiState.errorMessages.containsKey("tip")
-                )
-                OutlinedTextField(
-                    value = uiState.taxAmountInput,
-                    onValueChange = { onIntent(SplitContract.SplitIntent.UpdateTaxAmount(it)) },
-                    label = { Text(stringResource(R.string.split_tax_label)) }, // Assuming R.string.split_tax_label exists
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                    modifier = Modifier.weight(1f),
-                    isError = uiState.errorMessages.containsKey("tax")
-                )
-            }
-            uiState.errorMessages["tip"]?.let { ErrorText(it) } // Inline error messages
-            uiState.errorMessages["tax"]?.let { ErrorText(it) } // Inline error messages
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        item {
-            AlgorithmSelector(uiState.selectedAlgorithm) { algorithm ->
-                onIntent(SplitContract.SplitIntent.SelectAlgorithm(algorithm))
-            }
-            uiState.errorMessages["percentageSum"]?.let { ErrorText(it) }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        item {
-            Text(
-                text = stringResource(R.string.split_participants_header), // Assuming R.string.split_participants_header exists
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth(),
-                textAlign = TextAlign.Start
-            )
-        }
-
-        itemsIndexed(uiState.participants, key = { _, p -> "p-${p.id}" }) { index, participant ->
-            // Removed non-functional AnimatedVisibility(visible = true)
-            ParticipantInputCard(
-                participant = participant,
-                algorithm = uiState.selectedAlgorithm,
-                onIntent = onIntent,
-                // Min participants is 2, from ViewModel. Consider moving logic to ViewModel state.
-                canRemove = uiState.participants.size > 2, 
-                errorMessages = uiState.errorMessages.filterKeys { it.startsWith("p${index}") }
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        
-        item {
-            // This error key "participants" was previously used for Snackbar, now potentially for inline if needed
-            // uiState.errorMessages["participants"]?.let { ErrorText(it) }
-            Spacer(Modifier.height(16.dp))
-        }
-
-        item {
-            Button(
-                onClick = { onIntent(SplitContract.SplitIntent.CalculateSplit) },
-                enabled = !uiState.isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(stringResource(R.string.split_calculate_button)) // Assuming R.string.split_calculate_button exists
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        if (uiState.splitResult != null && !uiState.isLoading) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = SplitScreenDimens.ScreenPadding,
+                bottom = SplitScreenDimens.StickyButtonHeight + SplitScreenDimens.ScreenPadding
+            ),
+            verticalArrangement = Arrangement.spacedBy(SplitScreenDimens.ItemSpacing) // Reduced for denser packing of items
+        ) {
+            // Section 1: New Header Card
             item {
-                Text(
-                    text = stringResource(R.string.split_results_header), // Assuming R.string.split_results_header exists
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
-                    textAlign = TextAlign.Start
+                SplitHeaderCard(
+                    merchantName = uiState.merchantInfo?.name
+                        ?: stringResource(R.string.split_merchant_name_placeholder),
+                    transactionDate = uiState.merchantInfo?.date ?: "",
+                    totalAmount = uiState.initialTotalAmount,
+                    amountLeftToSplit = uiState.amountLeftToSplit ?: BigDecimal.ZERO,
+                    currencyFormatter = currencyFormatter,
+                    donationMessage = uiState.merchantInfo?.donationNote,
+                    modifier = Modifier.padding(horizontal = SplitScreenDimens.ScreenPadding)
                 )
-                uiState.finalTotalToSplit?.let {
-                     Text(
-                        // Assuming R.string.split_total_to_split_label is like "Total to Split: %1$s"
-                        text = stringResource(R.string.split_total_to_split_label, formatCurrency(it)), 
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth(),
-                        textAlign = TextAlign.End
+            }
+
+            // Section 2: "Custom split" Header, Algorithm Selector and "Add a friend" Action Button
+            item {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = SplitScreenDimens.ScreenPadding)
+                        .padding(top = SplitScreenDimens.SectionSpacing)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = stringResource(R.string.split_custom_split_header_new_ui),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        TextButton(onClick = onAddFriendClick) {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = stringResource(R.string.split_add_friend_action_desc_new_ui),
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(SplitScreenDimens.ItemSpacing))
+                            Text(
+                                text = stringResource(R.string.split_add_friend_action_new_ui),
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(SplitScreenDimens.ItemSpacing)) // Space before dropdown
+                    AlgorithmSelectorDropDown(
+                        selectedAlgorithm = uiState.selectedAlgorithm,
+                        onAlgorithmSelected = { algorithm ->
+                            onIntent(SplitContract.SplitIntent.SelectAlgorithm(algorithm))
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
-            itemsIndexed(uiState.splitResult.toList(), key = {_, item -> "r-${item.first}" }) { _, (participantId, amount) ->
-                val participantName = uiState.participants.find { it.id == participantId }?.name ?: stringResource(R.string.split_unknown_participant) // Assuming R.string.split_unknown_participant exists
-                SplitResultItem(participantName = participantName, share = amount)
-                Divider()
-            }
+
+            // Spacer item for visual separation before participant list
             item {
-                IconButton(onClick = { onIntent(SplitContract.SplitIntent.ToggleRoundingExplanation(true)) }) {
-                    Icon(Icons.Filled.Info, contentDescription = stringResource(R.string.split_rounding_info_desc)) // Assuming R.string.split_rounding_info_desc exists
-                }
+                Spacer(modifier = Modifier.height(SplitScreenDimens.ItemSpacing))
             }
-        }
-        
-        if (uiState.showRoundingExplanation) {
-            item {
-                AlertDialog(
-                    onDismissRequest = { onIntent(SplitContract.SplitIntent.ToggleRoundingExplanation(false)) },
-                    title = { Text(stringResource(R.string.split_rounding_title)) }, // Assuming R.string.split_rounding_title exists
-                    text = { Text(stringResource(R.string.split_rounding_details)) }, // Assuming R.string.split_rounding_details exists
-                    confirmButton = {
-                        TextButton(onClick = { onIntent(SplitContract.SplitIntent.ToggleRoundingExplanation(false)) }) {
-                            Text(stringResource(R.string.split_ok_button)) // Assuming R.string.split_ok_button exists
-                        }
-                    }
+
+            // Section 3: Participants List using the new ParticipantCard
+            itemsIndexed(
+                items = uiState.participants,
+                key = { _, participant -> participant.id }
+            ) { _, participant ->
+                val formattedShare = uiState.splitResult?.get(participant.id)?.let {
+                    val formatted = currencyFormatter.format(it)
+                    // Assuming USD for now, should be dynamic based on locale/currency settings
+                    if (!formatted.contains("USD")) "$formatted USD" else formatted
+                } ?: stringResource(R.string.split_zero_amount_usd)
+
+                val percentageShareText = uiState.participantPercentages[participant.id] ?: "0%"
+                val cardColor = uiState.participantCardColors[participant.id]
+                    ?: MaterialTheme.colorScheme.surfaceVariant
+
+                ParticipantCard(
+                    participant = participant,
+                    formattedShare = formattedShare,
+                    percentageShareText = percentageShareText,
+                    cardColor = cardColor,
+                    onIntent = onIntent,
+                    modifier = Modifier
+                        .padding(horizontal = SplitScreenDimens.ScreenPadding)
+                        .padding(vertical = SplitScreenDimens.ParticipantCardVerticalSpacing / 2)
                 )
             }
         }
-         item { Spacer(modifier = Modifier.height(80.dp)) } // Space for FAB
+
+        // Sticky "Continue" Button at the bottom of the screen
+        Button(
+            onClick = { onIntent(SplitContract.SplitIntent.CalculateSplit) },
+            enabled = !uiState.isLoading && uiState.participants.isNotEmpty() && uiState.initialTotalAmount > BigDecimal.ZERO,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(SplitScreenDimens.ScreenPadding)
+                .height(56.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Text(
+                text = stringResource(R.string.split_continue_button_new_ui),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+            Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+            Icon(
+                Icons.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        }
     }
 }
 
 /**
- * Composable for selecting the split algorithm.
- * Display names for algorithms are generated from enum names. For i18n, map enums to string resources.
+ * A composable that provides a dropdown menu for selecting a [SplitAlgorithm].
+ * It displays the currently selected algorithm and allows the user to choose a different one from the list.
  *
- * @param selectedAlgorithm The currently selected algorithm.
- * @param onAlgorithmSelected Lambda called when an algorithm is selected.
- * @author DroidSwap
+ * @param selectedAlgorithm The currently selected [SplitAlgorithm].
+ * @param onAlgorithmSelected Lambda function invoked when a new algorithm is selected by the user.
+ * @param modifier Modifier for this composable.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlgorithmSelector(
+private fun AlgorithmSelectorDropDown(
     selectedAlgorithm: SplitAlgorithm,
-    onAlgorithmSelected: (SplitAlgorithm) -> Unit
+    onAlgorithmSelected: (SplitAlgorithm) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val algorithms = SplitAlgorithm.values()
+    val algorithms = remember { SplitAlgorithm.entries.toList() }
 
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
         OutlinedTextField(
-            value = selectedAlgorithm.name.replace("_", " ").lowercase()
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }, // This formatting is for display
-            onValueChange = {}, 
+            value = stringResource(id = selectedAlgorithm.displayNameResId),
+            onValueChange = {}, // Read-only
             readOnly = true,
-            label = { Text(stringResource(R.string.split_algorithm_label)) }, // Assuming R.string.split_algorithm_label exists
+            label = { Text(stringResource(R.string.split_screen_algorithm_label)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth()
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier
+                .menuAnchor() // Important for proper positioning of the dropdown
+                .fillMaxWidth()
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -274,7 +379,7 @@ fun AlgorithmSelector(
         ) {
             algorithms.forEach { algorithm ->
                 DropdownMenuItem(
-                    text = { Text(algorithm.name.replace("_", " ").lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }) },
+                    text = { Text(stringResource(id = algorithm.displayNameResId)) },
                     onClick = {
                         onAlgorithmSelected(algorithm)
                         expanded = false
@@ -285,222 +390,105 @@ fun AlgorithmSelector(
     }
 }
 
-/**
- * Composable card for a single participant's input fields.
- *
- * @param participant The participant data.
- * @param algorithm The currently selected split algorithm, to show relevant fields.
- * @param onIntent Lambda to send [SplitContract.SplitIntent] to the ViewModel.
- * @param canRemove Whether the remove button should be enabled.
- * @param errorMessages Map of error messages relevant to this participant (for inline display).
- * @author DroidSwap
- */
+
+// --- Previews for the new SplitScreenContent ---
+@Preview(showBackground = true, name = "Split Screen Content - New UI Light")
 @Composable
-fun ParticipantInputCard(
-    participant: Participant,
-    algorithm: SplitAlgorithm,
-    onIntent: (SplitContract.SplitIntent) -> Unit,
-    canRemove: Boolean,
-    errorMessages: Map<String, String>
-) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = participant.name,
-                    onValueChange = { newName -> onIntent(SplitContract.SplitIntent.UpdateParticipantField(participant.id) { it.copy(name = newName) }) },
-                    label = { Text(stringResource(R.string.split_participant_name_label)) }, // Assuming R.string.split_participant_name_label exists
-                    modifier = Modifier.weight(1f),
-                    isError = errorMessages.containsKey("name")
-                )
-                Spacer(Modifier.width(8.dp))
-                IconButton(onClick = { onIntent(SplitContract.SplitIntent.RemoveParticipant(participant.id)) }, enabled = canRemove) {
-                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.split_remove_participant_desc)) // Assuming R.string.split_remove_participant_desc exists
-                }
-            }
-            errorMessages["name"]?.let { ErrorText(it) }
-
-            val onFieldUpdate = { updatedParticipant: (Participant) -> Participant ->
-                onIntent(SplitContract.SplitIntent.UpdateParticipantField(participant.id, updatedParticipant))
-            }
-
-            when (algorithm) {
-                SplitAlgorithm.FIXED_THEN_EQUAL -> {
-                    OutlinedTextField(
-                        value = participant.fixedAmountInput,
-                        onValueChange = { newVal -> onFieldUpdate { it.copy(fixedAmountInput = newVal) } },
-                        label = { Text(stringResource(R.string.split_fixed_amount_label)) }, // Assuming R.string.split_fixed_amount_label exists
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = errorMessages.containsKey("fixed")
-                    )
-                    errorMessages["fixed"]?.let { ErrorText(it) }
-                }
-                SplitAlgorithm.PERCENTAGE -> {
-                    OutlinedTextField(
-                        value = participant.percentageInput,
-                        onValueChange = { newVal -> onFieldUpdate { it.copy(percentageInput = newVal) } },
-                        label = { Text(stringResource(R.string.split_percentage_label)) }, // Assuming R.string.split_percentage_label exists
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = errorMessages.containsKey("percentage")
-                    )
-                    errorMessages["percentage"]?.let { ErrorText(it) }
-                }
-                SplitAlgorithm.WEIGHTED -> {
-                    OutlinedTextField(
-                        value = participant.weightInput,
-                        onValueChange = { newVal -> onFieldUpdate { it.copy(weightInput = newVal) } },
-                        label = { Text(stringResource(R.string.split_weight_label)) }, // Assuming R.string.split_weight_label exists
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = errorMessages.containsKey("weight")
-                    )
-                     errorMessages["weight"]?.let { ErrorText(it) }
-                }
-                SplitAlgorithm.RATIO -> {
-                     OutlinedTextField(
-                        value = participant.ratioInput,
-                        onValueChange = { newVal -> onFieldUpdate { it.copy(ratioInput = newVal) } },
-                        label = { Text(stringResource(R.string.split_ratio_label)) }, // Assuming R.string.split_ratio_label exists
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = errorMessages.containsKey("ratio")
-                    )
-                    errorMessages["ratio"]?.let { ErrorText(it) }
-                }
-                SplitAlgorithm.EQUAL -> { /* No specific field needed */ }
-            }
-        }
-    }
-}
-
-/**
- * Composable to display a single participant's share in the results.
- *
- * @param participantName Name of the participant.
- * @param share Calculated share for the participant.
- * @author DroidSwap
- */
-@Composable
-fun SplitResultItem(participantName: String, share: BigDecimal) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(participantName, style = MaterialTheme.typography.bodyLarge)
-        Text(formatCurrency(share), style = MaterialTheme.typography.bodyLarge)
-    }
-}
-
-/**
- * Simple composable to display an error message text for inline field errors.
- * These messages originate from UiState.errorMessages and should be user-friendly.
- * @param message The error message to display.
- * @author DroidSwap
- */
-@Composable
-fun ErrorText(message: String) {
-    Text(
-        text = message, // ViewModel should ideally resolve this from string resources
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(start = 16.dp, top = 2.dp, end = 16.dp).fillMaxWidth(),
-        textAlign = TextAlign.Start
-    )
-}
-
-/**
- * Formats a BigDecimal value as a currency string using the default locale.
- * @param amount The BigDecimal amount to format.
- * @return A string representing the formatted currency.
- * @author DroidSwap
- */
-@Composable
-private fun formatCurrency(amount: BigDecimal): String {
-    // Using LocalContext.current might be an issue in @Preview if not handled.
-    // Consider providing NumberFormat instance or Locale via parameters for better testability/previewability.
-    val formatter = NumberFormat.getCurrencyInstance() // Uses default locale from LocalContext indirectly
-    return formatter.format(amount)
-}
-
-// --- Previews ---
-@Preview(showBackground = true, name = "SplitScreen Initial State")
-@Composable
-fun SplitScreenPreviewInitial() {
-    CalcTheme {
-        SplitScreenContent(
-            uiState = SplitContract.SplitScreenState(
-                initialTotalAmount = BigDecimal("123.45"),
-                participants = listOf(Participant(id="1", name = "Alice"), Participant(id="2", name = "Bob"))
+fun SplitScreenContentNewUILight() {
+    CalcTheme(darkTheme = false) {
+        val sampleParticipants = listOf(
+            Participant(
+                id = "0",
+                name = "You",
+                isYou = true,
+                isPaid = true,
+                share = BigDecimal("8.00")
             ),
-            onIntent = {}
+            Participant(id = "1", name = "Samantha W.", isPaid = true, share = BigDecimal("20.00")),
+            Participant(id = "2", name = "Jonathan D.", isPaid = true, share = BigDecimal("12.80")),
+            Participant(id = "3", name = "Pandi Gembel", isPaid = false, share = BigDecimal("0.00"))
         )
-    }
-}
+        val sampleSplitResult =
+            sampleParticipants.associate { it.id to (it.share ?: BigDecimal.ZERO) }
+        val samplePercentages = mapOf("0" to "20%", "1" to "50%", "2" to "30%", "3" to "0%")
+        val sampleCardColors = mapOf(
+            "0" to MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            "1" to Color(0xFFFDE7E9),
+            "2" to MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+            "3" to Color(0xFFE7F0FD)
+        )
 
-@Preview(showBackground = true, name = "SplitScreen With Result")
-@Composable
-fun SplitScreenPreviewWithResult() {
-    val participant1 = Participant(id="1", name = "Alice")
-    val participant2 = Participant(id="2", name = "Bob")
-    CalcTheme {
-        SplitScreenContent(
-            uiState = SplitContract.SplitScreenState(
-                initialTotalAmount = BigDecimal("100.00"),
-                tipAmountInput = "15",
-                taxAmountInput = "7.50",
-                participants = listOf(participant1, participant2),
-                selectedAlgorithm = SplitAlgorithm.EQUAL,
-                splitResult = mapOf(participant1.id to BigDecimal("61.25"), participant2.id to BigDecimal("61.25")),
-                finalTotalToSplit = BigDecimal("122.50")
+        val sampleUiState = SplitContract.SplitScreenState(
+            initialTotalAmount = BigDecimal("40.80"),
+            totalAmountInput = "40.80",
+            participants = sampleParticipants,
+            selectedAlgorithm = SplitAlgorithm.EQUAL,
+            splitResult = sampleSplitResult,
+            participantPercentages = samplePercentages,
+            participantCardColors = sampleCardColors,
+            merchantInfo = SplitContract.MerchantInfo(
+                name = "Burger Gembel",
+                date = "22 Jun 2023",
+                donationNote = "Burger Gembel sends 2.99 USD for nature conservation"
             ),
-            onIntent = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "SplitScreen With Error Messages")
-@Composable
-fun SplitScreenPreviewWithErrorMessages() {
-    CalcTheme {
-        SplitScreenContent(
-            uiState = SplitContract.SplitScreenState(
-                initialTotalAmount = BigDecimal("100.00"),
-                participants = listOf(Participant(id="1", name = "Alice"), Participant(id="2", name = "Bob")),
-                errorMessages = mapOf("tip" to "Tip cannot be negative", "percentageSum" to "Percentages must sum to 100%")
-            ),
-            onIntent = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Participant Card - Percentage")
-@Composable
-fun ParticipantInputCardPreview_Percentage() {
-    CalcTheme {
-        ParticipantInputCard(
-            participant = Participant(id = "1", name = "Charlie", percentageInput = "50"),
-            algorithm = SplitAlgorithm.PERCENTAGE,
-            onIntent = {},
-            canRemove = true,
+            amountLeftToSplit = BigDecimal.ZERO,
+            isLoading = false,
             errorMessages = emptyMap()
         )
+        SplitScreenContent(
+            uiState = sampleUiState,
+            onIntent = {},
+            onAddFriendClick = {}
+        )
     }
 }
 
-@Preview(showBackground = true, name = "Participant Card - Fixed Amount Error")
+@Preview(showBackground = true, name = "Split Screen Content - New UI Dark")
 @Composable
-fun ParticipantInputCardPreview_FixedError() {
-    CalcTheme {
-        ParticipantInputCard(
-            participant = Participant(id = "1", name = "Dave", fixedAmountInput = "-5"),
-            algorithm = SplitAlgorithm.FIXED_THEN_EQUAL,
+fun SplitScreenContentNewUIDark() {
+    CalcTheme(darkTheme = true) {
+        val sampleParticipants = listOf(
+            Participant(
+                id = "0",
+                name = "You",
+                isYou = true,
+                isPaid = true,
+                share = BigDecimal("8.00")
+            ),
+            Participant(id = "1", name = "Samantha W.", isPaid = true, share = BigDecimal("20.00")),
+            Participant(id = "2", name = "Jonathan D.", isPaid = true, share = BigDecimal("12.80")),
+            Participant(id = "3", name = "Pandi Gembel", isPaid = false, share = BigDecimal("0.00"))
+        )
+        val sampleSplitResult =
+            sampleParticipants.associate { it.id to (it.share ?: BigDecimal.ZERO) }
+        val samplePercentages = mapOf("0" to "20%", "1" to "50%", "2" to "30%", "3" to "0%")
+        val sampleCardColors = mapOf(
+            "0" to MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+            "1" to Color(0xFF6F2020),
+            "2" to MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+            "3" to Color(0xFF20306F)
+        )
+        val sampleUiState = SplitContract.SplitScreenState(
+            initialTotalAmount = BigDecimal("40.80"),
+            totalAmountInput = "40.80",
+            participants = sampleParticipants,
+            selectedAlgorithm = SplitAlgorithm.PERCENTAGE,
+            splitResult = sampleSplitResult,
+            participantPercentages = samplePercentages,
+            participantCardColors = sampleCardColors,
+            merchantInfo = SplitContract.MerchantInfo(
+                name = "Burger Gembel",
+                date = "22 Jun 2023",
+                donationNote = "Burger Gembel sends 2.99 USD for nature conservation"
+            ),
+            amountLeftToSplit = BigDecimal("10.00"),
+            isLoading = false,
+            errorMessages = emptyMap()
+        )
+        SplitScreenContent(
+            uiState = sampleUiState,
             onIntent = {},
-            canRemove = true,
-            errorMessages = mapOf("p0_fixed" to "Fixed amount cannot be negative.") // Example of field-specific error key
+            onAddFriendClick = {}
         )
     }
 }
